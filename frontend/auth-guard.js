@@ -29,6 +29,22 @@
   --------------------------------------------------------
 */
 
+/*
+  Belt-and-suspenders for the same bfcache problem frontend/_headers
+  solves with Cache-Control: no-store. That header should stop
+  browsers from bfcaching these pages at all, but if one does it
+  anyway, "pageshow" firing with persisted=true means this exact DOM
+  was just restored from bfcache rather than freshly loaded/executed
+  — a straight reload forces a real navigation, which re-runs
+  requireAuth() from scratch and bounces to /login if the session is
+  gone (e.g. the user signed out, then hit Back).
+*/
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    window.location.reload();
+  }
+});
+
 async function requireAuth() {
   const { data: { session } } = await supabaseClient.auth.getSession();
 

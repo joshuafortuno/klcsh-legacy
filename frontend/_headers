@@ -1,0 +1,17 @@
+# Netlify custom headers.
+#
+# Every page on this site requires a signed-in session (checked by
+# auth-guard.js's requireAuth()). Without this, clicking the
+# browser's Back button after signing out can restore a page straight
+# from the browser's back/forward cache (bfcache) — a snapshot of the
+# already-rendered DOM from before sign-out — without re-running any
+# JS, so it briefly (or indefinitely, on some browsers) shows the
+# signed-in page again even though the session is gone.
+#
+# Cache-Control: no-store tells the browser not to bfcache these
+# responses at all, so Back always forces a real navigation, which
+# re-runs requireAuth() and redirects to /login exactly like a fresh
+# visit would. auth-guard.js also force-reloads on a restored bfcache
+# page as a second layer, in case a browser bfcaches anyway.
+/*
+  Cache-Control: no-store

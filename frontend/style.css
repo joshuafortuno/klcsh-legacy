@@ -1,0 +1,791 @@
+/* =========================================================
+   DESIGN TOKENS
+   Change these and the whole site's look updates.
+   ========================================================= */
+:root {
+  --bg: #0a0d08;
+  --panel: #10140b;
+  --panel-border: #202b16;
+  --panel-raised: #182111;
+
+  --grass: #5a9c3f;
+  --grass-dark: #3f7429;
+  /* "gold" now holds the site's primary green accent (buttons, links,
+     highlighted amounts) — kept the variable names so we didn't have
+     to touch every file that references them, just the color itself. */
+  --gold: #6fd94a;
+  --gold-dark: #4a9c2e;
+  --emerald: #35b56a;
+  --redstone: #c0392b;
+
+  --text: #e9ede2;
+  --text-dim: #a3ad93;
+  --text-faint: #6c7660;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --radius: 6px;
+}
+
+/* =========================================================
+   RESET / BASE
+   ========================================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at top, rgba(106, 156, 70, 0.08), transparent 60%);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+button { font-family: inherit; cursor: pointer; }
+
+/* visible keyboard focus everywhere */
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+.site-header {
+  border-bottom: 1px solid var(--panel-border);
+  background: rgba(20, 23, 15, 0.85);
+  backdrop-filter: blur(6px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+}
+
+/* a tiny css-drawn cube, no image asset needed */
+.logo-cube {
+  width: 16px;
+  height: 16px;
+  background: var(--grass);
+  border-top: 3px solid #8ec25f;
+  border-left: 3px solid #8ec25f;
+  border-right: 3px solid var(--grass-dark);
+  border-bottom: 3px solid var(--grass-dark);
+  box-sizing: content-box;
+}
+
+.main-nav { display: flex; gap: 28px; }
+
+.main-nav a {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.main-nav a:hover { color: var(--text); }
+
+.main-nav a.active {
+  color: var(--text);
+  border-bottom-color: var(--gold);
+}
+
+/* =========================================================
+   PROFILE MENU (avatar button + dropdown)
+   Filled in by auth-guard.js's renderAccountNav() once we
+   know who's logged in.
+   ========================================================= */
+.profile-menu { position: relative; }
+
+.profile-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  color: var(--text-faint); /* used by the outline-only default avatar */
+  overflow: hidden;
+}
+
+.profile-icon-btn svg { width: 20px; height: 20px; }
+.profile-icon-btn:hover { border-color: var(--gold); }
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+}
+
+.profile-dropdown a,
+.profile-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  padding: 9px 10px;
+  border-radius: 4px;
+}
+
+.profile-dropdown a:hover,
+.profile-dropdown button:hover {
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+.profile-dropdown #sign-out-btn { color: var(--redstone); }
+.profile-dropdown #sign-out-btn:hover { background: rgba(192, 57, 43, 0.12); color: var(--redstone); }
+
+/* =========================================================
+   HERO
+   ========================================================= */
+.hero {
+  padding: 72px 0 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-inner { max-width: 640px; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--emerald);
+  margin-bottom: 14px;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  margin-bottom: 18px;
+}
+
+.hero-sub {
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  max-width: 54ch;
+}
+
+.hero-cta { display: inline-block; margin-top: 28px; }
+
+/* a few drifting pixel blocks in the hero — decorative only,
+   hidden from screen readers and switched off for anyone who's
+   asked the OS to reduce motion */
+.floaty {
+  position: absolute;
+  border-radius: 3px;
+  background: linear-gradient(160deg, var(--emerald), var(--grass-dark));
+  opacity: 0.35;
+  animation: floaty-drift 6s ease-in-out infinite;
+}
+
+.floaty-1 { width: 22px; height: 22px; top: 18%; right: 12%; animation-delay: 0s; }
+.floaty-2 { width: 14px; height: 14px; top: 62%; right: 22%; animation-delay: 1.5s; background: linear-gradient(160deg, var(--gold), var(--gold-dark)); }
+.floaty-3 { width: 18px; height: 18px; top: 40%; right: 4%; animation-delay: 3s; }
+
+@keyframes floaty-drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+.page-intro { padding: 56px 0 8px; }
+
+/* =========================================================
+   ABOUT THE GOAL (voxel bar lives here — signature element)
+   Two-column split: copy on the left, the voxel progress card
+   as the "visual" on the right. A row of individually "mined"
+   blocks fills left to right — built from a real Minecraft
+   resource-bar motif rather than a generic rounded progress pill.
+   ========================================================= */
+.about-goal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  padding: 24px 0 72px;
+}
+
+.about-goal-text .hero-sub { margin-bottom: 20px; }
+
+.goal-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 28px 28px 24px;
+}
+
+.goal-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.goal-card-top h3 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.goal-amounts {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+
+.goal-amounts strong { color: var(--gold); font-weight: 500; }
+
+.voxel-bar {
+  display: grid;
+  grid-template-columns: repeat(30, 1fr);
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.voxel {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+}
+
+.voxel.filled {
+  background: linear-gradient(160deg, #a7e879, var(--gold-dark));
+  border-color: var(--gold-dark);
+}
+
+.goal-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+.goal-meta .highlight { color: var(--emerald); font-weight: 500; }
+
+/* =========================================================
+   STATS STRIP
+   Sits right under the hero, styled thin and muted — the same
+   slot a "trusted by" logo row would take on a marketing page.
+   ========================================================= */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding: 28px 0;
+  border-top: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--panel-border);
+  margin-bottom: 64px;
+}
+
+.stat { text-align: center; }
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+/* =========================================================
+   SECTION HEADINGS
+   ========================================================= */
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18px;
+}
+
+.section-heading h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.see-all {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.see-all:hover { color: var(--gold); }
+
+.section-heading--center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.accent-text { color: var(--gold); }
+
+/* =========================================================
+   KEY FEATURES (3-card grid)
+   ========================================================= */
+.key-features { margin-bottom: 72px; }
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.feature-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 26px 22px;
+  text-align: center;
+}
+
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--panel-raised);
+  font-size: 1.3rem;
+  margin-bottom: 14px;
+}
+
+.feature-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   SHOUTOUTS (testimonial-shaped, real ledger messages)
+   ========================================================= */
+.shoutouts { margin-bottom: 72px; }
+
+.shoutouts-sub { max-width: none; text-align: center; margin-bottom: 32px; }
+
+.shoutout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.shoutout-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shoutout-quote {
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.shoutout-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding-top: 12px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.shoutout-name { font-weight: 500; }
+.shoutout-amount { color: var(--emerald); }
+
+.shoutouts-footer { text-align: center; margin-top: 24px; }
+
+/* =========================================================
+   LEDGER (contribution log)
+   ========================================================= */
+.ledger-preview { margin-bottom: 64px; }
+.ledger-full { padding-bottom: 80px; }
+
+.ledger {
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.ledger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.ledger-row:last-child { border-bottom: none; }
+
+.ledger-who {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ledger-name { font-weight: 600; }
+
+.ledger-msg {
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.ledger-date { color: var(--text-faint); }
+.ledger-amount { color: var(--emerald); font-weight: 500; }
+
+.ledger-controls { margin-bottom: 16px; }
+
+#ledger-search {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+
+#ledger-search::placeholder { color: var(--text-faint); }
+
+.ledger-empty {
+  padding: 32px 18px;
+  text-align: center;
+  color: var(--text-faint);
+  background: var(--panel);
+}
+
+/* Previous on the left, Next on the right */
+.ledger-pagination {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+
+.btn-ghost:hover { border-color: var(--gold); }
+
+.btn-ghost:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.btn-ghost:disabled:hover { border-color: var(--panel-border); }
+
+/* =========================================================
+   GOALS GRID
+   ========================================================= */
+.goals { margin-bottom: 72px; }
+
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.goal-mini {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.goal-mini h4 {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  margin-bottom: 10px;
+}
+
+.mini-bar {
+  height: 8px;
+  background: var(--panel-raised);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.mini-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--grass-dark), var(--emerald));
+}
+
+.goal-mini .goal-meta { font-size: 0.8rem; }
+
+/* =========================================================
+   CONTRIBUTE CTA
+   ========================================================= */
+.contribute-cta {
+  background: var(--panel);
+  border-top: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 64px 0;
+}
+
+.cta-inner { max-width: 480px; }
+
+.contribute-cta h2 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  margin-bottom: 14px;
+}
+
+.contribute-cta p { color: var(--text-dim); margin-bottom: 24px; }
+
+.btn-gold {
+  background: linear-gradient(160deg, #a7e879, var(--gold-dark));
+  color: #0f2308;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  padding: 13px 28px;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 0 var(--gold-dark);
+  transition: transform 0.1s ease;
+}
+
+.btn-gold:hover { transform: translateY(-1px); }
+.btn-gold:active { transform: translateY(1px); box-shadow: none; }
+
+.cta-note {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  color: var(--text-faint) !important;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+.site-footer { padding: 32px 0 48px; }
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+.footer-links { display: flex; gap: 20px; }
+.footer-links a:hover { color: var(--gold); }
+
+/* row of social icon links, e.g. Discord/Facebook — add more
+   <a class="social-icon"> entries the same way to extend it */
+.footer-social { display: flex; gap: 16px; }
+
+.social-icon {
+  display: inline-flex;
+  color: var(--text-faint);
+  transition: color 0.15s ease;
+}
+
+.social-icon:hover { color: var(--gold); }
+.social-icon svg { width: 18px; height: 18px; display: block; }
+
+/* =========================================================
+   ABOUT PAGE
+   ========================================================= */
+.about-section { padding: 8px 0 56px; }
+
+.about-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.about-section-sub {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  max-width: 60ch;
+  margin-bottom: 22px;
+}
+
+.info-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--panel-border);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.info-item {
+  background: var(--panel);
+  padding: 16px 20px;
+}
+
+.info-item dt {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.info-item dd {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+
+.addon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.addon-credit {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.founder-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.founder-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  text-align: center;
+}
+
+.founder-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.founder-role {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+/* placeholder slot for a founder we haven't named yet */
+.founder-card--tba {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 640px) {
+  .about-goal { grid-template-columns: 1fr; }
+  .stats-strip { grid-template-columns: 1fr; gap: 16px; }
+  .goal-grid { grid-template-columns: 1fr; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .shoutout-grid { grid-template-columns: 1fr; }
+  .info-list { grid-template-columns: 1fr; }
+  .addon-grid { grid-template-columns: 1fr; }
+  .founder-grid { grid-template-columns: 1fr; }
+  .voxel-bar { grid-template-columns: repeat(16, 1fr); }
+  .ledger-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .ledger-right { align-self: flex-end; }
+}
+
+/* reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .btn-gold { transition: none; }
+  .floaty { animation: none; }
+}

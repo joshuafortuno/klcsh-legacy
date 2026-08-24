@@ -1,0 +1,6 @@
+# Unrelated local tool config that showed up in this folder — not part of the project
+.sf/
+
+# OS cruft
+.DS_Store
+Thumbs.db

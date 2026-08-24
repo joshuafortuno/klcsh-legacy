@@ -13,6 +13,14 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 </head>
 <body>
+  <script>
+    // Must run before <main> is parsed — gives it its offscreen
+    // starting position with zero flash. See nav-transitions.js.
+    (function () {
+      var dir = sessionStorage.getItem("navEnterFrom");
+      if (dir) document.documentElement.classList.add("nav-enter-" + dir);
+    })();
+  </script>
 
   <!-- ===== HEADER ===== -->
   <header class="site-header">
@@ -54,7 +62,7 @@
     </section>
 
     <!-- ===== ABOUT THE GOAL (voxel bar lives here) ===== -->
-    <section class="about-goal wrap" id="goal">
+    <section class="about-goal wrap" id="goal" data-reveal>
       <div class="about-goal-text">
         <p class="eyebrow">Where we're at</p>
         <h2>About this month's goal</h2>
@@ -72,10 +80,10 @@
 
     <!-- ===== KEY FEATURES (mirrors the "Build Anything / Survive & Thrive / Play with Friends" shape) ===== -->
     <section class="key-features wrap">
-      <div class="section-heading section-heading--center">
+      <div class="section-heading section-heading--center" data-reveal>
         <h2>Why it works this way</h2>
       </div>
-      <div class="feature-grid">
+      <div class="feature-grid" data-reveal-group>
         <div class="feature-card">
           <span class="feature-icon">🧱</span>
           <h3>Transparent costs</h3>
@@ -96,21 +104,21 @@
 
     <!-- ===== OTHER GOALS ===== -->
     <section class="goals wrap">
-      <div class="section-heading">
+      <div class="section-heading" data-reveal>
         <h2>What we're saving for</h2>
       </div>
-      <div class="goal-grid" id="goal-grid">
+      <div class="goal-grid" id="goal-grid" data-reveal-group>
         <!-- filled by script.js -->
       </div>
     </section>
 
     <!-- ===== SHOUTOUTS (testimonial-shaped, real ledger messages) ===== -->
     <section class="shoutouts wrap">
-      <div class="section-heading section-heading--center">
+      <div class="section-heading section-heading--center" data-reveal>
         <h2>Recent <span class="accent-text">shoutouts</span></h2>
         <p class="hero-sub shoutouts-sub">A few notes left by members with their last contribution.</p>
       </div>
-      <div class="shoutout-grid" id="shoutout-grid">
+      <div class="shoutout-grid" id="shoutout-grid" data-reveal-group>
         <!-- filled by script.js -->
       </div>
       <div class="shoutouts-footer">
@@ -119,7 +127,7 @@
     </section>
 
     <!-- ===== CONTRIBUTE CTA ===== -->
-    <section class="contribute-cta" id="contribute">
+    <section class="contribute-cta" id="contribute" data-reveal>
       <div class="wrap cta-inner">
         <h2>Chip in</h2>
         <p>
@@ -148,6 +156,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/supabase-client.js"></script>
   <script src="/pwa-register.js"></script>
+  <script src="/animations.js"></script>
+  <script src="/nav-transitions.js"></script>
   <script src="/auth-guard.js"></script>
   <script src="/script.js"></script>
   <script>

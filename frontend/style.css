@@ -118,7 +118,9 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 
 .main-nav a.active {
   color: var(--text);
-  border-bottom-color: var(--gold);
+  /* no border-bottom-color here — the sliding .nav-indicator span
+     (added by nav-transitions.js) draws the line instead, so it
+     can animate smoothly between links rather than jumping */
 }
 
 /* =========================================================
@@ -1010,6 +1012,107 @@ h1 {
 .changelog-entry li { margin-bottom: 4px; }
 
 /* =========================================================
+   SCROLL REVEAL + HOVER POLISH
+   Applied via animations.js, which adds "is-visible" the first
+   time an element scrolls into view. [data-reveal-group]'s
+   children stagger in via nth-child delays — this works even for
+   rows/cards a page's own script renders in later, since the
+   selector below is a live CSS rule, not something animations.js
+   has to reapply per element.
+   ========================================================= */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+[data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+
+[data-reveal-group] > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+[data-reveal-group].is-visible > * { opacity: 1; transform: translateY(0); }
+
+[data-reveal-group] > *:nth-child(2) { transition-delay: 0.07s; }
+[data-reveal-group] > *:nth-child(3) { transition-delay: 0.14s; }
+[data-reveal-group] > *:nth-child(4) { transition-delay: 0.21s; }
+[data-reveal-group] > *:nth-child(5) { transition-delay: 0.28s; }
+[data-reveal-group] > *:nth-child(n+6) { transition-delay: 0.34s; }
+
+/* Card lift-on-hover — reserved for grid items you're actually
+   scanning through (a "these are individual things" affordance),
+   not single info panels like .auth-card or .goal-card where a
+   hover lift would just be visual noise while someone's typing. */
+.feature-card,
+.goal-mini,
+.shoutout-card,
+.contributor-card,
+.founder-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.feature-card:hover,
+.goal-mini:hover,
+.shoutout-card:hover,
+.contributor-card:hover,
+.founder-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold-dark);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+/* Smoother hover on controls that previously changed instantly */
+.btn-ghost, .btn-small, .notification-icon-btn, .profile-icon-btn, .see-all, .social-icon {
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-gold:hover {
+  box-shadow: 0 4px 16px rgba(111, 217, 74, 0.35), 0 2px 0 var(--gold-dark);
+}
+
+/* =========================================================
+   NAV TRANSITIONS (sliding underline + directional page slide)
+   Wired by nav-transitions.js, only on the four pages sharing this
+   fixed order: Home / Contributions / Contributors / About. The
+   html.nav-enter-* starting state is applied synchronously by a
+   tiny inline script at the very top of <body>, before <main> is
+   even parsed — so <main> is born already offset, no transition
+   plays on that first frame, and there's nothing to flash.
+   ========================================================= */
+.main-nav { position: relative; }
+
+.nav-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--gold);
+  transition: left 0.35s cubic-bezier(0.65, 0, 0.35, 1), width 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+
+main {
+  transition: transform 0.32s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.32s ease;
+}
+
+main.nav-exit-left { transform: translateX(-32px); opacity: 0; }
+main.nav-exit-right { transform: translateX(32px); opacity: 0; }
+
+html.nav-enter-left main { transform: translateX(-32px); opacity: 0; }
+html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
+
+/* Voxel bar "pop-in" — the site's signature element gets its own
+   flourish. Only filled blocks animate (they're the meaningful
+   part); animation-delay is set per-block by script.js so blocks
+   fill in left-to-right instead of all popping at once. */
+@keyframes voxel-pop {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.voxel-pop { animation: voxel-pop 0.3s ease backwards; }
+
+/* =========================================================
    RESPONSIVE
    ========================================================= */
 @media (max-width: 640px) {
@@ -1029,7 +1132,9 @@ h1 {
   .install-panel .btn-gold { width: 100%; text-align: center; }
 }
 
-/* reduced motion */
+/* reduced motion — deliberately does NOT cover this session's new
+   scroll-reveal/hover/nav-transition polish (see animations.js and
+   nav-transitions.js's top comments for why) */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .btn-gold { transition: none; }

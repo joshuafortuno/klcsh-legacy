@@ -13,6 +13,14 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 </head>
 <body>
+  <script>
+    // Must run before <main> is parsed — gives it its offscreen
+    // starting position with zero flash. See nav-transitions.js.
+    (function () {
+      var dir = sessionStorage.getItem("navEnterFrom");
+      if (dir) document.documentElement.classList.add("nav-enter-" + dir);
+    })();
+  </script>
 
   <!-- ===== HEADER =====
        Unlike index.html/contributions.html, this page is NOT behind
@@ -45,7 +53,7 @@
     </section>
 
     <!-- ===== SERVER INFO ===== -->
-    <section class="about-section wrap">
+    <section class="about-section wrap" data-reveal>
       <h2>The server</h2>
       <p class="about-section-sub">
         KLCSH Legacy is a Minecraft Bedrock Edition survival multiplayer server, kept up to date
@@ -72,12 +80,12 @@
     </section>
 
     <!-- ===== ADDONS / FEATURES ===== -->
-    <section class="about-section wrap">
+    <section class="about-section wrap" data-reveal>
       <h2>Addons &amp; features</h2>
       <p class="about-section-sub">
         Custom behavior packs built specifically for this server, all authored by SilentBeast8332.
       </p>
-      <div class="addon-grid">
+      <div class="addon-grid" data-reveal-group>
         <div class="feature-card">
           <span class="feature-icon">💰</span>
           <h3>WorldVault</h3>
@@ -103,7 +111,7 @@
     </section>
 
     <!-- ===== RESOURCE PACKS ===== -->
-    <section class="about-section wrap">
+    <section class="about-section wrap" data-reveal>
       <h2>Resource packs</h2>
       <p class="about-section-sub">
         Players connect with a curated pack list, including Prizma and Actions &amp; Stuff,
@@ -112,12 +120,12 @@
     </section>
 
     <!-- ===== FOUNDERS ===== -->
-    <section class="about-section wrap">
+    <section class="about-section wrap" data-reveal>
       <h2>Founders</h2>
       <p class="about-section-sub">
         KLCSH Legacy is community-founded and community-run.
       </p>
-      <div class="founder-grid">
+      <div class="founder-grid" data-reveal-group>
         <div class="founder-card">
           <div class="founder-name">JM</div>
           <div class="founder-ign">Kingly</div>
@@ -165,6 +173,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/supabase-client.js"></script>
   <script src="/pwa-register.js"></script>
+  <script src="/animations.js"></script>
+  <script src="/nav-transitions.js"></script>
   <script src="/auth-guard.js"></script>
   <script>
     // No requireAuth() here on purpose — this page stays public.

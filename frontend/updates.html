@@ -38,7 +38,7 @@
     </section>
 
     <section class="updates-section wrap">
-      <div class="install-panel">
+      <div class="install-panel" data-reveal>
         <div class="install-panel-info">
           <span class="status-badge" id="install-status-badge">Checking…</span>
           <p class="install-note" id="install-note"></p>
@@ -46,7 +46,7 @@
         <button type="button" class="btn-gold" id="install-action-btn" hidden></button>
       </div>
 
-      <div id="changelog-list"></div>
+      <div id="changelog-list" data-reveal-group></div>
       <div id="changelog-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="changelog-prev-page">Previous</button>
@@ -72,6 +72,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/supabase-client.js"></script>
   <script src="/pwa-register.js"></script>
+  <script src="/animations.js"></script>
   <script src="/auth-guard.js"></script>
   <script src="/updates.js"></script>
   <script>

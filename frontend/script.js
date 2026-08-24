@@ -69,7 +69,11 @@ function renderVoxelBar(current, target, totalBlocks = 30) {
   let blocksHtml = "";
   for (let i = 0; i < totalBlocks; i++) {
     const isFilled = i < filledCount;
-    blocksHtml += `<div class="voxel ${isFilled ? "filled" : ""}"></div>`;
+    // Only filled blocks get the pop-in animation (they're the
+    // meaningful part) — animation-delay staggers them left to
+    // right, same idea as mini-bar-fill's dynamic width above.
+    const delayAttr = isFilled ? ` style="animation-delay: ${i * 18}ms"` : "";
+    blocksHtml += `<div class="voxel ${isFilled ? "filled voxel-pop" : ""}"${delayAttr}></div>`;
   }
   return blocksHtml;
 }
@@ -121,11 +125,11 @@ function renderStats(period, legacyStats) {
 
   el.innerHTML = `
     <div class="stat">
-      <div class="stat-value">${money(totalRaised)}</div>
+      <div class="stat-value" id="stat-raised">₱0</div>
       <div class="stat-label">Raised all time</div>
     </div>
     <div class="stat">
-      <div class="stat-value">${contributorCount}</div>
+      <div class="stat-value" id="stat-contributors">0</div>
       <div class="stat-label">Named contributors</div>
     </div>
     <div class="stat">
@@ -133,6 +137,14 @@ function renderStats(period, legacyStats) {
       <div class="stat-label">Next funding deadline</div>
     </div>
   `;
+
+  // Counts up from 0 to the real value instead of just appearing —
+  // animations.js is loaded before this file specifically so this
+  // is always available (see index.html's script order).
+  animateCount(document.getElementById("stat-raised"), totalRaised, {
+    format: (n) => money(Math.round(n)),
+  });
+  animateCount(document.getElementById("stat-contributors"), contributorCount);
 }
 
 // Would turn contributions with a message into quote-style cards,

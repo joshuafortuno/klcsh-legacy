@@ -13,6 +13,14 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 </head>
 <body>
+  <script>
+    // Must run before <main> is parsed — gives it its offscreen
+    // starting position with zero flash. See nav-transitions.js.
+    (function () {
+      var dir = sessionStorage.getItem("navEnterFrom");
+      if (dir) document.documentElement.classList.add("nav-enter-" + dir);
+    })();
+  </script>
 
   <header class="site-header">
     <div class="wrap header-inner">
@@ -41,7 +49,7 @@
       <div class="ledger-controls">
         <input type="text" id="ledger-search" placeholder="Search by name…" />
       </div>
-      <div class="ledger" id="ledger-full">
+      <div class="ledger" id="ledger-full" data-reveal-group>
         <!-- filled by ledger.js -->
       </div>
       <div class="ledger-pagination">
@@ -68,6 +76,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/supabase-client.js"></script>
   <script src="/pwa-register.js"></script>
+  <script src="/animations.js"></script>
+  <script src="/nav-transitions.js"></script>
   <script src="/auth-guard.js"></script>
   <script src="/transactions/ledger.js"></script>
   <script>

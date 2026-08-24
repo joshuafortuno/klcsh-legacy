@@ -152,7 +152,7 @@ profileForm.addEventListener("submit", async (e) => {
     profileSubmitBtn.textContent = "Save changes";
 
     if (error) {
-      profileError.textContent = "Something went wrong saving your profile. Please try again.";
+      profileError.textContent = "Couldn't save your profile: " + error.message;
       return;
     }
 
@@ -181,7 +181,7 @@ profileForm.addEventListener("submit", async (e) => {
   profileSubmitBtn.textContent = "Save changes";
 
   if (updateError || nameError) {
-    profileError.textContent = "Something went wrong saving your profile. Please try again.";
+    profileError.textContent = "Couldn't save your profile: " + (updateError || nameError).message;
     return;
   }
 

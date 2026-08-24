@@ -121,12 +121,25 @@ function avatarSvg(gender) {
 }
 
 /*
+  Turns a notification row into what the bell dropdown shows. The
+  message column already has the full sentence baked in (built
+  server-side when the notification was created), so this is just
+  a short date underneath it.
+*/
+function formatNotificationDate(isoString) {
+  const d = new Date(isoString);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+    " · " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+/*
   Populates the header's account slot once we know who's logged
-  in: an avatar button that toggles a dropdown (Settings / Sign
-  out — profile editing lives inside Settings). Looks up `gender`
-  to pick the right icon — that's a plain, non-sensitive column,
-  readable under the same "profiles are viewable by all logged-in
-  users" policy everything else on the page already relies on.
+  in: a notification bell (unread count badge, dropdown, live
+  updates via Realtime) and an avatar button that toggles its own
+  dropdown (Settings / Sign out). Looks up `gender`/`role` — both
+  plain, non-sensitive columns, readable under the same "profiles
+  are viewable by all logged-in users" policy everything else on
+  the page already relies on.
 */
 async function renderAccountNav(user) {
   const slot = document.getElementById("header-account");
@@ -134,25 +147,49 @@ async function renderAccountNav(user) {
 
   const { data: profile } = await supabaseClient
     .from("profiles")
-    .select("gender")
+    .select("gender, role")
     .eq("id", user.id)
     .single();
 
   const gender = profile ? profile.gender : "other";
+  const isAdmin = profile ? profile.role === "admin" : false;
 
   slot.innerHTML = `
-    <div class="profile-menu">
-      <button type="button" class="profile-icon-btn" id="profile-icon-btn"
-              aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
-        ${avatarSvg(gender)}
-      </button>
-      <div class="profile-dropdown" id="profile-dropdown" role="menu" hidden>
-        <a href="/user/settings.html" role="menuitem">Settings</a>
-        <button type="button" id="sign-out-btn" role="menuitem">Sign out</button>
+    <div class="header-account-inner">
+      <div class="notification-bell">
+        <button type="button" class="notification-icon-btn" id="notification-icon-btn"
+                aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span class="notification-badge" id="notification-badge" hidden></span>
+        </button>
+        <div class="notification-dropdown" id="notification-dropdown" role="menu" hidden>
+          <div class="notification-list" id="notification-list"></div>
+        </div>
+      </div>
+      <div class="profile-menu">
+        <button type="button" class="profile-icon-btn" id="profile-icon-btn"
+                aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+          ${avatarSvg(gender)}
+        </button>
+        <div class="profile-dropdown" id="profile-dropdown" role="menu" hidden>
+          ${isAdmin ? `<a href="/admin/dashboard.html" role="menuitem">Admin Dashboard</a>` : ""}
+          <a href="/user/my-contributions.html" role="menuitem">My Contributions</a>
+          <a href="/user/settings.html" role="menuitem">Settings</a>
+          <button type="button" id="sign-out-btn" role="menuitem">Sign out</button>
+        </div>
       </div>
     </div>
   `;
 
+  wireProfileMenu();
+  wireNotificationBell(user);
+}
+
+function wireProfileMenu() {
   const btn = document.getElementById("profile-icon-btn");
   const dropdown = document.getElementById("profile-dropdown");
 
@@ -182,4 +219,110 @@ async function renderAccountNav(user) {
     await supabaseClient.auth.signOut();
     window.location.href = "/account/login.html";
   });
+}
+
+/*
+  The bell: loads the last 30 notifications once, keeps them in
+  `notifications` (module-level to this function's closure via
+  the outer variable below), re-renders the list + badge on every
+  change, and subscribes to Realtime so a brand new notification
+  shows up without a page reload. Marking read only happens when
+  you click an individual notification — opening the dropdown
+  itself doesn't mark anything read, by design.
+*/
+function wireNotificationBell(user) {
+  let notifications = [];
+
+  const btn = document.getElementById("notification-icon-btn");
+  const dropdown = document.getElementById("notification-dropdown");
+  const listEl = document.getElementById("notification-list");
+  const badgeEl = document.getElementById("notification-badge");
+
+  function renderBadge() {
+    const unreadCount = notifications.filter(n => !n.read).length;
+    if (unreadCount > 0) {
+      badgeEl.textContent = unreadCount > 9 ? "9+" : String(unreadCount);
+      badgeEl.hidden = false;
+    } else {
+      badgeEl.hidden = true;
+    }
+  }
+
+  function renderList() {
+    listEl.innerHTML = notifications.length === 0
+      ? `<div class="notification-empty">Nothing yet.</div>`
+      : notifications.map(n => `
+          <button type="button" class="notification-item ${n.read ? "" : "notification-item--unread"}" data-notif-id="${n.id}">
+            <span class="notification-message">${n.message}</span>
+            <span class="notification-time">${formatNotificationDate(n.created_at)}</span>
+          </button>
+        `).join("");
+
+    listEl.querySelectorAll("[data-notif-id]").forEach(item => {
+      item.addEventListener("click", () => markNotificationRead(item.dataset.notifId));
+    });
+
+    renderBadge();
+  }
+
+  async function markNotificationRead(id) {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif || notif.read) return;
+
+    notif.read = true;
+    renderList(); // optimistic — feels instant, worth it for a one-column flag flip
+
+    const { error } = await supabaseClient.from("notifications").update({ read: true }).eq("id", id);
+    if (error) {
+      notif.read = false; // put it back if the save actually failed
+      renderList();
+    }
+  }
+
+  function closeDropdown() {
+    dropdown.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  }
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = !dropdown.hidden;
+    dropdown.hidden = isOpen;
+    btn.setAttribute("aria-expanded", String(!isOpen));
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!dropdown.hidden && !dropdown.contains(e.target) && e.target !== btn) {
+      closeDropdown();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDropdown();
+  });
+
+  (async () => {
+    const { data } = await supabaseClient
+      .from("notifications")
+      .select("id, type, message, read, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    notifications = data || [];
+    renderList();
+  })();
+
+  // Live updates — a new row for this user shows up immediately
+  // without needing to reload the page.
+  supabaseClient
+    .channel(`notifications:${user.id}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+      (payload) => {
+        notifications = [payload.new, ...notifications];
+        renderList();
+      }
+    )
+    .subscribe();
 }

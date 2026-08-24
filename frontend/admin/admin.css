@@ -1,0 +1,180 @@
+/* =========================================================
+   ADMIN SECTION — shared styling
+   Loaded alongside /style.css on every page in frontend/admin/.
+   ========================================================= */
+
+.admin-main { padding: 40px 0 80px; }
+
+.admin-intro { margin-bottom: 32px; }
+.admin-intro h1 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 6px; }
+.admin-intro p { color: var(--text-dim); font-size: 0.92rem; }
+
+/* secondary nav across the five admin pages */
+.admin-nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--panel-border);
+  margin-bottom: 32px;
+}
+
+.admin-nav a {
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+}
+
+.admin-nav a:hover { color: var(--text); }
+
+.admin-nav a.active {
+  color: var(--text);
+  border-bottom-color: var(--gold);
+}
+
+.admin-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.admin-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin-bottom: 4px;
+}
+
+.admin-card-sub {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+}
+
+/* summary tiles on the Dashboard page */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.admin-stat {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.admin-stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.admin-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.admin-stat.needs-attention .admin-stat-value { color: var(--redstone); }
+
+/* generic table used for lists of profiles/payments/expenses/etc */
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+
+.admin-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.admin-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--panel-border);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+
+.admin-table .num { font-family: var(--font-mono); }
+
+.admin-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+/* .status-badge and .btn-small moved to /style.css — the payment
+   page (outside /admin/) needs them too, and neither is really
+   admin-specific. */
+
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* inline quick-add form (expenses, side-goals) */
+.inline-form {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.inline-form .field { display: flex; flex-direction: column; gap: 4px; }
+.inline-form .field label { font-size: 0.78rem; color: var(--text-faint); }
+
+.inline-form input[type="text"],
+.inline-form input[type="number"],
+.inline-form select {
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+.inline-form .field--grow { flex: 1; min-width: 160px; }
+
+.admin-role-select,
+.admin-status-select {
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--panel-border);
+  margin: 24px 0;
+}
+
+.activity-feed { display: flex; flex-direction: column; gap: 10px; }
+
+.activity-item {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.activity-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.activity-time { color: var(--text-faint); font-size: 0.78rem; }
+
+@media (max-width: 640px) {
+  .admin-table { display: block; overflow-x: auto; }
+}

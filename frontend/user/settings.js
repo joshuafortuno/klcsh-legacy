@@ -23,6 +23,15 @@
     instead, same as a first-time signup would have. hasProfile
     tracks which path applies.
 
+  - Account status: shows your current status and, if you don't
+    already have a pending request, buttons to ask for a change —
+    "go inactive" or "leave" if you're active, "reactivate" or
+    "leave" if you're inactive. submit_status_request() blocks a
+    second request while one's already pending (clean error
+    instead of a raw constraint violation) — the admin reviews it
+    from the Notifications page, and you get a notification either
+    way (see database/08_notifications.sql).
+
   - Email: supabaseClient.auth.updateUser({ email }) kicks off
     Supabase's built-in "secure email change" flow — it sends a
     confirmation link to the new address (and, depending on your
@@ -253,3 +262,58 @@ passwordForm.addEventListener("submit", async (e) => {
   passwordSuccess.textContent = "Password updated.";
   passwordForm.reset();
 });
+
+async function loadStatusCard(user) {
+  const currentEl = document.getElementById("status-current");
+  const pendingNoticeEl = document.getElementById("status-pending-notice");
+  const pendingValueEl = document.getElementById("status-pending-value");
+  const actionsEl = document.getElementById("status-actions");
+  const errorEl = document.getElementById("status-error");
+  const successEl = document.getElementById("status-success");
+
+  const [{ data: profile }, { data: pendingRequests }] = await Promise.all([
+    supabaseClient.from("profiles").select("status").eq("id", user.id).single(),
+    supabaseClient.from("leave_requests").select("requested_status").eq("user_id", user.id).eq("status", "pending"),
+  ]);
+
+  const currentStatus = profile ? profile.status : "active";
+  currentEl.textContent = `Your current status: ${currentStatus}.`;
+
+  const pending = pendingRequests && pendingRequests[0];
+  if (pending) {
+    pendingValueEl.textContent = pending.requested_status;
+    pendingNoticeEl.hidden = false;
+    actionsEl.innerHTML = "";
+    return;
+  }
+  pendingNoticeEl.hidden = true;
+
+  const options = currentStatus === "inactive"
+    ? [{ label: "Request to reactivate", value: "active" }, { label: "Request to leave", value: "left" }]
+    : [{ label: "Request to go inactive", value: "inactive" }, { label: "Request to leave", value: "left" }];
+
+  actionsEl.innerHTML = options
+    .map(o => `<button type="button" class="btn-ghost" data-request-status="${o.value}">${o.label}</button>`)
+    .join("");
+
+  actionsEl.querySelectorAll("[data-request-status]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      errorEl.textContent = "";
+      successEl.textContent = "";
+      btn.disabled = true;
+
+      const { error } = await supabaseClient.rpc("submit_status_request", {
+        p_requested_status: btn.dataset.requestStatus,
+      });
+
+      if (error) {
+        btn.disabled = false;
+        errorEl.textContent = error.message;
+        return;
+      }
+
+      successEl.textContent = "Request submitted — an admin will review it.";
+      loadStatusCard(user);
+    });
+  });
+}

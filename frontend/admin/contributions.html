@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributions — Admin — KLCSH Legacy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a href="/index.html" class="logo">
+        <span class="logo-cube" aria-hidden="true"></span>
+        KLCSH Legacy
+      </a>
+      <nav class="main-nav">
+        <a href="/index.html">Home</a>
+        <a href="/transactions/contributions.html">Contributions</a>
+        <a href="/contributors.html">Contributors</a>
+        <a href="/about.html">About</a>
+      </nav>
+      <div class="header-account" id="header-account"></div>
+    </div>
+  </header>
+
+  <main class="admin-main wrap">
+    <div class="admin-intro">
+      <h1>Contributions</h1>
+      <p>Every submission ever made, dues and side-goal chip-ins alike. Read-only — approvals happen in Notifications.</p>
+    </div>
+
+    <nav class="admin-nav">
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/contributions.html" class="active">Contributions</a>
+      <a href="/admin/manage-contributions.html">Manage Contributions</a>
+      <a href="/admin/manage-accounts.html">Manage Accounts</a>
+      <a href="/admin/notifications.html">Notifications</a>
+    </nav>
+
+    <div class="admin-card">
+      <h2>Live submissions</h2>
+      <p class="admin-card-sub">Made through the app's proof-upload-and-approve flow.</p>
+
+      <div class="inline-form">
+        <div class="field">
+          <label for="status-filter">Status</label>
+          <select id="status-filter">
+            <option value="">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="field field--grow">
+          <label for="name-filter">Search by name</label>
+          <input type="text" id="name-filter" placeholder="In-game name…" />
+        </div>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>For</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody id="contributions-rows"></tbody>
+      </table>
+      <div id="contributions-empty"></div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Historical contributions</h2>
+      <p class="admin-card-sub">
+        Real history from before this site existed, imported from the original tracking spreadsheet.
+        No linked account (most of these contributors predate having one), so no approval workflow applies here.
+      </p>
+
+      <form class="inline-form" id="legacy-add-form">
+        <div class="field field--grow">
+          <label for="legacy-add-name">Name</label>
+          <input type="text" id="legacy-add-name" placeholder="Gamertag" required />
+        </div>
+        <div class="field">
+          <label for="legacy-add-amount">Amount</label>
+          <input type="number" id="legacy-add-amount" min="0" step="0.01" placeholder="0.00" required />
+        </div>
+        <div class="field">
+          <label for="legacy-add-date">Date</label>
+          <input type="date" id="legacy-add-date" required />
+        </div>
+        <button type="submit" class="btn-gold">Add</button>
+      </form>
+      <p class="form-error" id="legacy-add-error" role="alert"></p>
+
+      <div class="inline-form">
+        <div class="field field--grow">
+          <label for="legacy-name-filter">Search by name</label>
+          <input type="text" id="legacy-name-filter" placeholder="In-game name…" />
+        </div>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="legacy-rows"></tbody>
+      </table>
+      <div id="legacy-empty"></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-client.js"></script>
+  <script src="/auth-guard.js"></script>
+  <script src="/admin/admin-guard.js"></script>
+  <script src="/admin/admin-contributions.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAdmin();
+      if (user) {
+        renderAccountNav(user);
+        loadContributions();
+        loadLegacyContributions();
+      }
+    })();
+  </script>
+</body>
+</html>

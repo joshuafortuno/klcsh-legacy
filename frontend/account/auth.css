@@ -2,6 +2,13 @@
 
 .auth-wrap { display: flex; justify-content: center; }
 
+/* narrower centered column for stacked cards that aren't a
+   side-by-side row — used by the payment page */
+.narrow-wrap { max-width: 640px; margin: 0 auto; }
+
+.narrow-wrap .auth-card { max-width: none; margin-bottom: 20px; }
+.narrow-wrap .auth-card:last-child { margin-bottom: 0; }
+
 .auth-card {
   width: 100%;
   max-width: 420px;

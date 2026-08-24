@@ -122,9 +122,99 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 /* =========================================================
-   PROFILE MENU (avatar button + dropdown)
+   HEADER ACCOUNT AREA (notification bell + profile menu)
    Filled in by auth-guard.js's renderAccountNav() once we
    know who's logged in.
+   ========================================================= */
+.header-account-inner { display: flex; align-items: center; gap: 10px; }
+
+.notification-bell { position: relative; }
+
+.notification-icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  color: var(--text-dim);
+}
+
+.notification-icon-btn svg { width: 18px; height: 18px; }
+.notification-icon-btn:hover { border-color: var(--gold); color: var(--text); }
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--redstone);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 320px;
+  max-width: 80vw;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+}
+
+.notification-list { display: flex; flex-direction: column; gap: 2px; }
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 9px 10px;
+  color: var(--text-dim);
+}
+
+.notification-item:hover { background: var(--panel-raised); }
+
+.notification-item--unread {
+  background: rgba(232, 195, 74, 0.08);
+  color: var(--text);
+}
+
+.notification-item--unread:hover { background: rgba(232, 195, 74, 0.14); }
+
+.notification-message { font-size: 0.85rem; line-height: 1.4; }
+.notification-time { font-size: 0.72rem; color: var(--text-faint); }
+
+.notification-empty {
+  padding: 24px 10px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+/* =========================================================
+   PROFILE MENU (avatar button + dropdown)
    ========================================================= */
 .profile-menu { position: relative; }
 
@@ -540,6 +630,40 @@ h1 {
   background: var(--panel);
 }
 
+.expense-list { margin-bottom: 20px; }
+
+/* small stat tiles — payment page's goal/share/remaining summary */
+.summary-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.summary-tile {
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.summary-tile-value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.summary-tile-label {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.gcash-qr {
+  max-width: 220px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
 /* Previous on the left, Next on the right */
 .ledger-pagination {
   display: flex;
@@ -564,6 +688,41 @@ h1 {
 }
 
 .btn-ghost:disabled:hover { border-color: var(--panel-border); }
+
+/* status pills — one class + a modifier, e.g. "status-badge status-badge--pending" */
+.status-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge--pending, .status-badge--open { background: rgba(232, 195, 74, 0.15); color: var(--gold); }
+.status-badge--approved, .status-badge--active, .status-badge--finalized { background: rgba(53, 181, 106, 0.15); color: var(--emerald); }
+.status-badge--rejected, .status-badge--denied, .status-badge--left { background: rgba(192, 57, 43, 0.15); color: var(--redstone); }
+.status-badge--inactive { background: rgba(162, 173, 147, 0.15); color: var(--text-dim); }
+.status-badge--member { background: var(--panel-raised); color: var(--text-dim); }
+.status-badge--admin { background: rgba(232, 195, 74, 0.15); color: var(--gold); }
+
+/* compact secondary buttons */
+.btn-small {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--text);
+}
+
+.btn-small:hover { border-color: var(--gold); }
+
+.btn-small.btn-approve { border-color: var(--emerald); color: var(--emerald); }
+.btn-small.btn-approve:hover { background: rgba(53, 181, 106, 0.12); }
+
+.btn-small.btn-reject { border-color: var(--redstone); color: var(--redstone); }
+.btn-small.btn-reject:hover { background: rgba(192, 57, 43, 0.12); }
 
 /* =========================================================
    GOALS GRID
@@ -638,12 +797,6 @@ h1 {
 
 .btn-gold:hover { transform: translateY(-1px); }
 .btn-gold:active { transform: translateY(1px); box-shadow: none; }
-
-.cta-note {
-  margin-top: 14px;
-  font-size: 0.8rem;
-  color: var(--text-faint) !important;
-}
 
 /* =========================================================
    FOOTER
@@ -755,16 +908,58 @@ h1 {
   margin-bottom: 4px;
 }
 
+.founder-ign {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--emerald);
+  margin-bottom: 8px;
+}
+
 .founder-role {
   font-size: 0.8rem;
   color: var(--text-faint);
 }
 
-/* placeholder slot for a founder we haven't named yet */
-.founder-card--tba {
-  border-style: dashed;
-  opacity: 0.6;
+/* =========================================================
+   CONTRIBUTORS PAGE
+   ========================================================= */
+.contributors-section { padding: 8px 0 72px; }
+
+.contributor-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 16px;
 }
+
+.contributor-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.contributor-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  color: var(--text-faint);
+  overflow: hidden;
+}
+
+.contributor-avatar svg { width: 30px; height: 30px; }
+
+.contributor-name { font-weight: 600; margin-bottom: 6px; }
+.contributor-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* =========================================================
    RESPONSIVE
@@ -778,6 +973,7 @@ h1 {
   .info-list { grid-template-columns: 1fr; }
   .addon-grid { grid-template-columns: 1fr; }
   .founder-grid { grid-template-columns: 1fr; }
+  .contributor-list { grid-template-columns: 1fr; }
   .voxel-bar { grid-template-columns: repeat(16, 1fr); }
   .ledger-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .ledger-right { align-self: flex-end; }

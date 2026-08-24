@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contribute — KLCSH Legacy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/account/auth.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a href="/index.html" class="logo">
+        <span class="logo-cube" aria-hidden="true"></span>
+        KLCSH Legacy
+      </a>
+      <nav class="main-nav">
+        <a href="/index.html">Home</a>
+        <a href="/transactions/contributions.html">Contributions</a>
+        <a href="/contributors.html">Contributors</a>
+        <a href="/about.html">About</a>
+      </nav>
+      <div class="header-account" id="header-account"></div>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <div class="narrow-wrap">
+
+      <div class="page-intro">
+        <p class="eyebrow">Chip in</p>
+        <h1>Contribute</h1>
+        <p class="hero-sub">
+          Send your payment via GCash, then submit proof below — an admin reviews and approves it,
+          same as everyone else's contribution.
+        </p>
+      </div>
+
+      <!-- ===== THIS MONTH'S GOAL ===== -->
+      <div class="auth-card">
+        <h1 id="period-heading">This month's goal</h1>
+        <p class="auth-sub" id="period-sub"></p>
+
+        <div class="ledger expense-list" id="expense-list"></div>
+
+        <div class="summary-tiles" id="summary-tiles">
+          <!-- filled by pay.js -->
+        </div>
+      </div>
+
+      <!-- ===== GCASH DETAILS ===== -->
+      <div class="auth-card">
+        <h1>Send via GCash</h1>
+        <p class="auth-sub" id="gcash-details">Loading…</p>
+        <img id="gcash-qr" class="gcash-qr" src="" alt="GCash QR code" hidden />
+      </div>
+
+      <!-- ===== SUBMIT PROOF ===== -->
+      <div class="auth-card">
+        <h1>Submit your proof</h1>
+        <p class="auth-sub">Once you've sent the payment, tell us about it here.</p>
+
+        <form id="payment-form" class="form-styled" novalidate>
+          <label>What's this for?</label>
+          <div class="radio-group" id="payment-target-group">
+            <label class="radio-option">
+              <input type="radio" name="payment-target" value="period" class="radio-input" checked />
+              <span class="radio-box" aria-hidden="true"></span>
+              This month's dues
+            </label>
+            <!-- active side goals get added here by pay.js -->
+          </div>
+
+          <label for="payment-amount">Amount sent</label>
+          <input type="number" id="payment-amount" min="0" step="0.01" placeholder="0.00" required />
+
+          <label for="payment-ref">GCash reference number</label>
+          <input type="text" id="payment-ref" autocomplete="off" required />
+
+          <label for="payment-screenshot">Screenshot of the confirmation</label>
+          <input type="file" id="payment-screenshot" accept="image/*" required />
+
+          <p class="form-error" id="payment-error" role="alert"></p>
+          <p class="form-success" id="payment-success" role="status"></p>
+
+          <button type="submit" class="btn-gold" id="payment-submit-btn">Submit for review</button>
+        </form>
+        <p class="field-hint" style="margin-top: 14px;">
+          Check <strong>My Contributions</strong> (in the account menu, top right) for your full submission history.
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-client.js"></script>
+  <script src="/auth-guard.js"></script>
+  <script src="/payment/pay.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAuth();
+      if (user) {
+        renderAccountNav(user);
+        loadPaymentPage(user);
+      }
+    })();
+  </script>
+</body>
+</html>

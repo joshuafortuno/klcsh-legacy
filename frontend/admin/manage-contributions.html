@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Contributions — Admin — KLCSH Legacy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a href="/index.html" class="logo">
+        <span class="logo-cube" aria-hidden="true"></span>
+        KLCSH Legacy
+      </a>
+      <nav class="main-nav">
+        <a href="/index.html">Home</a>
+        <a href="/transactions/contributions.html">Contributions</a>
+        <a href="/contributors.html">Contributors</a>
+        <a href="/about.html">About</a>
+      </nav>
+      <div class="header-account" id="header-account"></div>
+    </div>
+  </header>
+
+  <main class="admin-main wrap">
+    <div class="admin-intro">
+      <h1>Manage Contributions</h1>
+      <p>Set this month's goal, track side-goals, and close the books when the month's done.</p>
+    </div>
+
+    <nav class="admin-nav">
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/contributions.html">Contributions</a>
+      <a href="/admin/manage-contributions.html" class="active">Manage Contributions</a>
+      <a href="/admin/manage-accounts.html">Manage Accounts</a>
+      <a href="/admin/notifications.html">Notifications</a>
+    </nav>
+
+    <!-- ===== PAYMENT SETTINGS ===== -->
+    <div class="admin-card">
+      <h2>Payment settings</h2>
+      <p class="admin-card-sub">Shown to members on the payment page — where their GCash send should actually go.</p>
+
+      <div class="inline-form">
+        <div class="field field--grow">
+          <label for="gcash-name">GCash name</label>
+          <input type="text" id="gcash-name" placeholder="e.g. Juan Dela Cruz" />
+        </div>
+        <div class="field field--grow">
+          <label for="gcash-number">GCash number</label>
+          <input type="text" id="gcash-number" placeholder="e.g. 09XX XXX XXXX" />
+        </div>
+      </div>
+      <div class="inline-form">
+        <button type="button" class="btn-small" id="save-settings-btn">Save name &amp; number</button>
+      </div>
+      <p class="form-error" id="settings-error" role="alert"></p>
+
+      <hr class="section-divider" />
+
+      <label>QR code image <span class="optional">(optional)</span></label>
+      <p class="field-hint" style="margin: 4px 0 12px;">Shown on the payment page alongside your name/number.</p>
+      <img id="gcash-qr-preview" class="gcash-qr" src="" alt="Current QR code" hidden />
+      <div class="inline-form">
+        <div class="field field--grow">
+          <input type="file" id="gcash-qr-file" accept="image/*" />
+        </div>
+        <button type="button" class="btn-small btn-reject" id="remove-qr-btn" hidden>Remove</button>
+      </div>
+      <p class="form-error" id="qr-error" role="alert"></p>
+      <p class="form-success" id="qr-success" role="status"></p>
+    </div>
+
+    <!-- ===== THIS MONTH'S GOAL ===== -->
+    <div class="admin-card">
+      <h2 id="period-heading">This month's goal</h2>
+      <p class="admin-card-sub" id="back-to-current"></p>
+      <p class="admin-card-sub">
+        The goal's total is automatic — it's just the sum of the expenses below.
+        Give it a name so members know what they're funding.
+      </p>
+
+      <div class="inline-form">
+        <div class="field field--grow">
+          <label for="goal-title">Name of the goal</label>
+          <input type="text" id="goal-title" placeholder="e.g. September upkeep" />
+        </div>
+        <button type="button" class="btn-small" id="save-title-btn">Save name</button>
+      </div>
+
+      <form class="inline-form" id="expense-form">
+        <div class="field field--grow">
+          <label for="expense-for">For</label>
+          <input type="text" id="expense-for" placeholder="e.g. Server hosting" required />
+        </div>
+        <div class="field">
+          <label for="expense-amount">How much</label>
+          <input type="number" id="expense-amount" min="0" step="0.01" placeholder="0.00" required />
+        </div>
+        <button type="submit" class="btn-gold">Add expense</button>
+      </form>
+      <p class="form-error" id="expense-error" role="alert"></p>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>For</th>
+            <th>Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="expense-rows"></tbody>
+      </table>
+      <div id="expense-empty"></div>
+
+      <hr class="section-divider" />
+      <p><strong>Total: <span id="expense-total">₱0</span></strong></p>
+
+      <hr class="section-divider" />
+      <button type="button" class="btn-gold" id="finalize-btn">Finalize this period</button>
+      <p class="field-hint" style="margin-top: 8px;">
+        Locks these expenses, splits the total across active members, and opens next month's period automatically.
+      </p>
+      <p class="form-error" id="finalize-error" role="alert"></p>
+    </div>
+
+    <!-- ===== SIDE GOALS ===== -->
+    <div class="admin-card">
+      <h2>Side goals</h2>
+      <p class="admin-card-sub">Optional, voluntary goals outside the regular monthly split.</p>
+
+      <form class="inline-form" id="side-goal-form">
+        <div class="field field--grow">
+          <label for="side-goal-title">Name</label>
+          <input type="text" id="side-goal-title" placeholder="e.g. Anti-cheat plugin license" required />
+        </div>
+        <div class="field">
+          <label for="side-goal-target">Target</label>
+          <input type="number" id="side-goal-target" min="0" step="0.01" placeholder="0.00" required />
+        </div>
+        <button type="submit" class="btn-gold">Add side-goal</button>
+      </form>
+      <p class="form-error" id="side-goal-error" role="alert"></p>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="side-goal-rows"></tbody>
+      </table>
+      <div id="side-goal-empty"></div>
+    </div>
+
+    <!-- ===== PAST PERIODS ===== -->
+    <div class="admin-card">
+      <h2>Past periods</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Name</th>
+            <th>Total expenses</th>
+            <th>Per member</th>
+            <th>Surplus</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="past-period-rows"></tbody>
+      </table>
+      <div id="past-period-empty"></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-client.js"></script>
+  <script src="/auth-guard.js"></script>
+  <script src="/admin/admin-guard.js"></script>
+  <script src="/admin/manage-contributions.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAdmin();
+      if (user) {
+        renderAccountNav(user);
+        loadManageContributions();
+      }
+    })();
+  </script>
+</body>
+</html>

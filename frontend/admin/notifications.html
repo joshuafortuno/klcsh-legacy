@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifications — Admin — KLCSH Legacy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a href="/index.html" class="logo">
+        <span class="logo-cube" aria-hidden="true"></span>
+        KLCSH Legacy
+      </a>
+      <nav class="main-nav">
+        <a href="/index.html">Home</a>
+        <a href="/transactions/contributions.html">Contributions</a>
+        <a href="/contributors.html">Contributors</a>
+        <a href="/about.html">About</a>
+      </nav>
+      <div class="header-account" id="header-account"></div>
+    </div>
+  </header>
+
+  <main class="admin-main wrap">
+    <div class="admin-intro">
+      <h1>Notifications</h1>
+      <p>Everything waiting on you — pending payments and leave requests.</p>
+    </div>
+
+    <nav class="admin-nav">
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/contributions.html">Contributions</a>
+      <a href="/admin/manage-contributions.html">Manage Contributions</a>
+      <a href="/admin/manage-accounts.html">Manage Accounts</a>
+      <a href="/admin/notifications.html" class="active">Notifications</a>
+    </nav>
+
+    <!-- ===== PENDING PAYMENTS ===== -->
+    <div class="admin-card">
+      <h2>Pending payments</h2>
+      <p class="admin-card-sub">Dues and side-goal chip-ins waiting on approval.</p>
+      <p class="form-error" id="payments-error" role="alert"></p>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>For</th>
+            <th>Amount</th>
+            <th>GCash ref</th>
+            <th>Proof</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="payment-rows"></tbody>
+      </table>
+      <div id="payments-empty"></div>
+    </div>
+
+    <!-- ===== PENDING STATUS REQUESTS ===== -->
+    <div class="admin-card">
+      <h2>Pending status requests</h2>
+      <p class="admin-card-sub">Leave, go inactive, or reactivate — approving applies the requested status right away.</p>
+      <p class="form-error" id="leave-error" role="alert"></p>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Wants to become</th>
+            <th>Requested</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="leave-rows"></tbody>
+      </table>
+      <div id="leave-empty"></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-client.js"></script>
+  <script src="/auth-guard.js"></script>
+  <script src="/admin/admin-guard.js"></script>
+  <script src="/admin/notifications.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAdmin();
+      if (user) {
+        renderAccountNav(user);
+        loadNotifications();
+      }
+    })();
+  </script>
+</body>
+</html>

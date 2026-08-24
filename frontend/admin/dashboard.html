@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — KLCSH Legacy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a href="/index.html" class="logo">
+        <span class="logo-cube" aria-hidden="true"></span>
+        KLCSH Legacy
+      </a>
+      <nav class="main-nav">
+        <a href="/index.html">Home</a>
+        <a href="/transactions/contributions.html">Contributions</a>
+        <a href="/contributors.html">Contributors</a>
+        <a href="/about.html">About</a>
+      </nav>
+      <div class="header-account" id="header-account"></div>
+    </div>
+  </header>
+
+  <main class="admin-main wrap">
+    <div class="admin-intro">
+      <h1>Admin Dashboard</h1>
+      <p>Where things stand right now.</p>
+    </div>
+
+    <nav class="admin-nav">
+      <a href="/admin/dashboard.html" class="active">Dashboard</a>
+      <a href="/admin/contributions.html">Contributions</a>
+      <a href="/admin/manage-contributions.html">Manage Contributions</a>
+      <a href="/admin/manage-accounts.html">Manage Accounts</a>
+      <a href="/admin/notifications.html">Notifications</a>
+    </nav>
+
+    <div class="admin-stats" id="admin-stats">
+      <!-- filled by dashboard.js -->
+    </div>
+
+    <div class="admin-card">
+      <h2>Recent activity</h2>
+      <p class="admin-card-sub">The last admin actions taken, pulled straight from the audit log.</p>
+      <div class="activity-feed" id="activity-feed">
+        <!-- filled by dashboard.js -->
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-client.js"></script>
+  <script src="/auth-guard.js"></script>
+  <script src="/admin/admin-guard.js"></script>
+  <script src="/admin/dashboard.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAdmin();
+      if (user) {
+        renderAccountNav(user);
+        loadDashboard();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,15 +1,22 @@
 /*
   LEDGER.JS — the full contributions page
   --------------------------------------------------------
-  Re-uses the same money/date/row helpers as script.js would,
-  but since this is a separate page load, we redefine the
-  small ones here to keep each page's script self-contained
-  and easy to read on its own.
+  Reads real history from Supabase's legacy_contributions table
+  (see database/05_legacy_contributions.sql) — the actual record
+  from the spreadsheet this site was adapted from, predating
+  accounts entirely, so there's no per-member RLS filtering here:
+  "legacy contributions are viewable by all logged-in users" is a
+  plain public-read policy, same as periods/expenses.
+
+  Fetched once into `allContributions`, then search + pagination
+  both work against that in-memory list — this site isn't going
+  to have thousands of rows, so there's no need for server-side
+  paging.
   --------------------------------------------------------
 */
 
 function money(n) {
-  return `₱${n.toLocaleString()}`;
+  return `₱${Number(n).toLocaleString()}`;
 }
 
 function formatDate(isoString) {
@@ -26,7 +33,6 @@ function renderLedgerRows(contributions) {
     <div class="ledger-row">
       <div class="ledger-who">
         <span class="ledger-name">${c.name}</span>
-        ${c.message ? `<span class="ledger-msg">"${c.message}"</span>` : ""}
       </div>
       <div class="ledger-right">
         <span class="ledger-date">${formatDate(c.date)}</span>
@@ -38,6 +44,7 @@ function renderLedgerRows(contributions) {
 
 const PAGE_SIZE = 10;
 let currentPage = 1;
+let allContributions = [];
 
 const prevBtn = document.getElementById("prev-page");
 const nextBtn = document.getElementById("next-page");
@@ -47,8 +54,8 @@ function renderFullLedger(filterText = "") {
   const needle = filterText.trim().toLowerCase();
 
   const filtered = needle
-    ? CONTRIBUTIONS.filter(c => c.name.toLowerCase().includes(needle))
-    : CONTRIBUTIONS;
+    ? allContributions.filter(c => c.name.toLowerCase().includes(needle))
+    : allContributions;
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   currentPage = Math.min(currentPage, totalPages);
@@ -62,21 +69,40 @@ function renderFullLedger(filterText = "") {
   nextBtn.disabled = currentPage >= totalPages;
 }
 
-// Live-filter as the user types in the search box — back to page 1,
-// since the old page number might not exist in the new results.
-document.getElementById("ledger-search").addEventListener("input", (e) => {
-  currentPage = 1;
-  renderFullLedger(e.target.value);
-});
+async function loadLedger() {
+  const { data, error } = await supabaseClient
+    .from("legacy_contributions")
+    .select("contributor_name, amount, contributed_on")
+    .order("contributed_on", { ascending: false });
 
-prevBtn.addEventListener("click", () => {
-  currentPage -= 1;
-  renderFullLedger(document.getElementById("ledger-search").value);
-});
+  if (error) {
+    document.getElementById("ledger-full").innerHTML =
+      `<div class="ledger-empty">Couldn't load contributions: ${error.message}</div>`;
+    return;
+  }
 
-nextBtn.addEventListener("click", () => {
-  currentPage += 1;
-  renderFullLedger(document.getElementById("ledger-search").value);
-});
+  allContributions = (data || []).map(row => ({
+    name: row.contributor_name,
+    amount: row.amount,
+    date: row.contributed_on,
+  }));
 
-renderFullLedger();
+  renderFullLedger();
+
+  document.getElementById("ledger-search").addEventListener("input", (e) => {
+    currentPage = 1;
+    renderFullLedger(e.target.value);
+  });
+
+  prevBtn.addEventListener("click", () => {
+    currentPage -= 1;
+    renderFullLedger(document.getElementById("ledger-search").value);
+  });
+
+  nextBtn.addEventListener("click", () => {
+    currentPage += 1;
+    renderFullLedger(document.getElementById("ledger-search").value);
+  });
+}
+
+loadLedger();

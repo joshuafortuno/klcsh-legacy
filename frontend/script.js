@@ -1,15 +1,60 @@
 /*
   SCRIPT.JS — homepage only
   --------------------------------------------------------
-  This file's whole job: take the data from data.js and
-  turn it into HTML elements on the page. Nothing here
-  touches a server or a database yet — that's Step 3+.
+  Everything here reads from real Supabase tables now — goals
+  from periods/expenses/side_goals (edited in the admin's Manage
+  Contributions page), and the stats row's totals from
+  legacy_contributions (the real historical record — see
+  database/05_legacy_contributions.sql). data.js is gone; there's
+  no fake data left to stand in for.
   --------------------------------------------------------
 */
 
 // Small helper: turns 340 into "₱340"
 function money(n) {
-  return `₱${n.toLocaleString()}`;
+  return `₱${Number(n).toLocaleString()}`;
+}
+
+// "2026-09-01" -> "September 25, 2026". Periods don't store an
+// explicit due date, so this derives one from the site's
+// established monthly due date (the 25th — same day contribution
+// records use). Built from year/month numbers rather than
+// `new Date(monthStr)` + setDate() to avoid UTC-parse/local-
+// timezone date-shifting bugs.
+function formatDeadline(monthDateStr) {
+  const [year, month] = monthDateStr.split("-");
+  const d = new Date(Number(year), Number(month) - 1, 25);
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+// Fetches the currently open period plus its computed goal total
+// (sum of its expenses) and how much has actually been collected
+// (period_progress() — a public aggregate, never exposes
+// individual payment rows). Returns null if there's no open
+// period yet (e.g. the admin hasn't logged in and bootstrapped
+// one via Manage Contributions).
+async function loadCurrentPeriod() {
+  const { data: period } = await supabaseClient
+    .from("periods")
+    .select("id, month, title")
+    .eq("status", "open")
+    .order("month", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!period) return null;
+
+  const [{ data: expenses }, { data: raised }] = await Promise.all([
+    supabaseClient.from("expenses").select("amount").eq("period_id", period.id),
+    supabaseClient.rpc("period_progress", { p_period_id: period.id }),
+  ]);
+
+  return {
+    title: period.title || "This month's goal",
+    deadline: formatDeadline(period.month),
+    target: (expenses || []).reduce((sum, e) => sum + Number(e.amount), 0),
+    current: raised || 0,
+  };
 }
 
 /*
@@ -29,31 +74,50 @@ function renderVoxelBar(current, target, totalBlocks = 30) {
   return blocksHtml;
 }
 
-function renderSpotlightGoal() {
+function renderSpotlightGoal(period) {
   const el = document.getElementById("spotlight-goal");
-  const { title, target, current, deadline } = SPOTLIGHT_GOAL;
-  const pct = Math.round((current / target) * 100);
+
+  if (!period) {
+    el.innerHTML = `<p class="hero-sub">No active goal right now — check back soon.</p>`;
+    return;
+  }
+
+  const pct = period.target > 0 ? Math.round((period.current / period.target) * 100) : 0;
 
   el.innerHTML = `
     <div class="goal-card-top">
-      <h3>${title}</h3>
-      <div class="goal-amounts"><strong>${money(current)}</strong> of ${money(target)}</div>
+      <h3>${period.title}</h3>
+      <div class="goal-amounts"><strong>${money(period.current)}</strong> of ${money(period.target)}</div>
     </div>
-    <div class="voxel-bar">${renderVoxelBar(current, target)}</div>
+    <div class="voxel-bar">${renderVoxelBar(period.current, period.target)}</div>
     <div class="goal-meta">
       <span>${pct}% funded</span>
-      <span class="highlight">Needed by ${deadline}</span>
+      <span class="highlight">Needed by ${period.deadline}</span>
     </div>
   `;
 }
 
-function renderStats() {
+// Sums legacy_contributions for the stats row — plain client-side
+// aggregation since this is public data anyway (same RLS policy
+// as periods/expenses), and the row count here will never be
+// large enough to need a database-side aggregate function.
+async function loadLegacyStats() {
+  const { data } = await supabaseClient
+    .from("legacy_contributions")
+    .select("contributor_name, amount");
+
+  const rows = data || [];
+  return {
+    totalRaised: rows.reduce((sum, r) => sum + Number(r.amount), 0),
+    contributorCount: new Set(rows.map(r => r.contributor_name)).size,
+  };
+}
+
+function renderStats(period, legacyStats) {
   const el = document.getElementById("stats-row");
 
-  const totalRaised = CONTRIBUTIONS.reduce((sum, c) => sum + c.amount, 0);
-  const contributorCount = new Set(
-    CONTRIBUTIONS.map(c => c.name).filter(n => n !== "Anonymous Miner")
-  ).size;
+  const totalRaised = legacyStats ? legacyStats.totalRaised : 0;
+  const contributorCount = legacyStats ? legacyStats.contributorCount : 0;
 
   el.innerHTML = `
     <div class="stat">
@@ -65,43 +129,53 @@ function renderStats() {
       <div class="stat-label">Named contributors</div>
     </div>
     <div class="stat">
-      <div class="stat-value">${SPOTLIGHT_GOAL.deadline}</div>
+      <div class="stat-value">${period ? period.deadline : "—"}</div>
       <div class="stat-label">Next funding deadline</div>
     </div>
   `;
 }
 
-// Turns a handful of contributions that left a message into
-// quote-style cards — reuses the same CONTRIBUTIONS data as the
-// ledger, just displayed as shoutouts instead of a plain list.
+// Would turn contributions with a message into quote-style cards,
+// but neither legacy_contributions nor payment_submissions has a
+// message field in the current schema — there's nothing to show
+// yet. Hides the section instead of an empty heading with nothing
+// under it. Revisit if a "leave a note" field ever gets added to
+// the payment submission flow.
 function renderShoutoutCards() {
-  const el = document.getElementById("shoutout-grid");
-  const withMessages = CONTRIBUTIONS.filter(c => c.message).slice(0, 3);
-
-  // No contributions have a message right now (real data doesn't
-  // include any yet) — hide the whole section rather than show an
-  // empty grid with a heading and nothing under it.
-  if (withMessages.length === 0) {
-    el.closest(".shoutouts").hidden = true;
-    return;
-  }
-
-  el.innerHTML = withMessages.map(c => `
-    <div class="shoutout-card">
-      <p class="shoutout-quote">"${c.message}"</p>
-      <div class="shoutout-meta">
-        <span class="shoutout-name">${c.name}</span>
-        <span class="shoutout-amount">+${money(c.amount)}</span>
-      </div>
-    </div>
-  `).join("");
+  document.querySelector(".shoutouts").hidden = true;
 }
 
-function renderGoalGrid() {
+// Side goals (managed in the admin's Manage Contributions page,
+// under "Side goals") — optional, voluntary goals outside the
+// regular monthly split. Progress comes from side_goal_progress(),
+// a public aggregate that sums approved contributions without
+// exposing anyone's individual payment rows.
+async function renderGoalGrid() {
   const el = document.getElementById("goal-grid");
 
-  el.innerHTML = OTHER_GOALS.map(g => {
-    const pct = Math.round((g.current / g.target) * 100);
+  const { data: goals } = await supabaseClient
+    .from("side_goals")
+    .select("id, title, target")
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+
+  const sideGoals = goals || [];
+
+  // No active side goals right now — hide the section instead of
+  // showing an empty heading with nothing under it.
+  if (sideGoals.length === 0) {
+    el.closest(".goals").hidden = true;
+    return;
+  }
+  el.closest(".goals").hidden = false;
+
+  const progressResults = await Promise.all(
+    sideGoals.map(g => supabaseClient.rpc("side_goal_progress", { p_side_goal_id: g.id }))
+  );
+
+  el.innerHTML = sideGoals.map((g, i) => {
+    const current = progressResults[i].data || 0;
+    const pct = g.target > 0 ? Math.round((current / g.target) * 100) : 0;
     return `
       <div class="goal-mini">
         <h4>${g.title}</h4>
@@ -109,7 +183,7 @@ function renderGoalGrid() {
           <div class="mini-bar-fill" style="width: ${pct}%"></div>
         </div>
         <div class="goal-meta">
-          <span>${money(g.current)} / ${money(g.target)}</span>
+          <span>${money(current)} / ${money(g.target)}</span>
           <span>${pct}%</span>
         </div>
       </div>
@@ -117,13 +191,14 @@ function renderGoalGrid() {
   }).join("");
 }
 
-// Placeholder for now — becomes a real Stripe Checkout call in Step 4
-document.getElementById("contribute-btn").addEventListener("click", () => {
-  alert("Payments aren't wired up yet — that's our next build step!");
-});
-
 // Run everything once the page loads
-renderSpotlightGoal();
-renderStats();
+(async () => {
+  const [period, legacyStats] = await Promise.all([
+    loadCurrentPeriod(),
+    loadLegacyStats(),
+  ]);
+  renderSpotlightGoal(period);
+  renderStats(period, legacyStats);
+})();
 renderShoutoutCards();
 renderGoalGrid();

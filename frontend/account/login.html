@@ -47,7 +47,27 @@
           <button type="button" id="resend-btn" class="btn-ghost">Resend confirmation email</button>
         </div>
 
-        <p class="auth-switch">Need an account? <a href="/register">Create one</a></p>
+        <p class="auth-switch" id="login-switch-wrap">
+          <a href="#" id="forgot-password-link">Forgot password?</a> ·
+          Need an account? <a href="/register">Create one</a>
+        </p>
+
+        <!-- swapped in for #login-form when "Forgot password?" is clicked -->
+        <form id="forgot-form" class="form-styled" novalidate hidden>
+          <p class="auth-sub">Enter your account email and we'll send a link to reset your password.</p>
+
+          <label for="forgot-email">Email</label>
+          <input type="email" id="forgot-email" required autocomplete="email" />
+
+          <p class="form-error" id="forgot-error" role="alert"></p>
+          <p class="form-success" id="forgot-success"></p>
+
+          <button type="submit" class="btn-gold" id="forgot-submit-btn">Send reset link</button>
+        </form>
+
+        <p class="auth-switch" id="back-to-login-wrap" hidden>
+          <a href="#" id="back-to-login-link">← Back to log in</a>
+        </p>
       </div>
     </div>
   </main>

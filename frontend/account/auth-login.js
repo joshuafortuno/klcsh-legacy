@@ -70,3 +70,63 @@ resendBtn.addEventListener("click", async () => {
   resendBtn.disabled = false;
   resendBtn.textContent = error ? "Try again" : "Sent! Check your inbox";
 });
+
+/*
+  FORGOT PASSWORD
+  --------------------------------------------------------
+  Swaps #login-form out for #forgot-form in place (same card, no
+  separate page) so this stays a single step for the user. The
+  actual "set a new password" step happens on a different page —
+  /reset-password — which the emailed link points at; Supabase
+  itself handles proving the link is genuine (it establishes a
+  short-lived recovery session when that link is opened), this
+  page only has to ask for the email and trigger the send.
+*/
+const forgotLink = document.getElementById("forgot-password-link");
+const loginSwitchWrap = document.getElementById("login-switch-wrap");
+const backToLoginLink = document.getElementById("back-to-login-link");
+const backToLoginWrap = document.getElementById("back-to-login-wrap");
+const forgotForm = document.getElementById("forgot-form");
+const forgotError = document.getElementById("forgot-error");
+const forgotSuccess = document.getElementById("forgot-success");
+const forgotSubmitBtn = document.getElementById("forgot-submit-btn");
+
+forgotLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  form.hidden = true;
+  verifyNotice.hidden = true;
+  loginSwitchWrap.hidden = true;
+  forgotForm.hidden = false;
+  backToLoginWrap.hidden = false;
+});
+
+backToLoginLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  forgotForm.hidden = true;
+  backToLoginWrap.hidden = true;
+  form.hidden = false;
+  loginSwitchWrap.hidden = false;
+});
+
+forgotForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  forgotError.textContent = "";
+  forgotSuccess.textContent = "";
+
+  const email = document.getElementById("forgot-email").value.trim();
+
+  forgotSubmitBtn.disabled = true;
+  forgotSubmitBtn.textContent = "Sending…";
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + "/reset-password",
+  });
+
+  forgotSubmitBtn.disabled = false;
+  forgotSubmitBtn.textContent = "Send reset link";
+
+  // Same message either way — confirming or denying whether an
+  // email is registered would let someone probe for valid accounts.
+  forgotSuccess.textContent = "If that email has an account, a reset link is on its way. Check your inbox.";
+  if (error) console.error("resetPasswordForEmail:", error.message);
+});

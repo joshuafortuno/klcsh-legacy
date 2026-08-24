@@ -8,6 +8,7 @@
 /contributors       /contributors.html                       200
 /login               /account/login.html                      200
 /register            /account/register.html                   200
+/reset-password      /account/reset-password.html             200
 /contributions        /transactions/contributions.html          200
 /settings             /user/settings.html                       200
 /my-contributions      /user/my-contributions.html                200

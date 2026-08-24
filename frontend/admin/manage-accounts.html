@@ -13,15 +13,15 @@
 
   <header class="site-header">
     <div class="wrap header-inner">
-      <a href="/index.html" class="logo">
+      <a href="/" class="logo">
         <span class="logo-cube" aria-hidden="true"></span>
         KLCSH Legacy
       </a>
       <nav class="main-nav">
-        <a href="/index.html">Home</a>
-        <a href="/transactions/contributions.html">Contributions</a>
-        <a href="/contributors.html">Contributors</a>
-        <a href="/about.html">About</a>
+        <a href="/">Home</a>
+        <a href="/contributions">Contributions</a>
+        <a href="/contributors">Contributors</a>
+        <a href="/about">About</a>
       </nav>
       <div class="header-account" id="header-account"></div>
     </div>
@@ -34,11 +34,11 @@
     </div>
 
     <nav class="admin-nav">
-      <a href="/admin/dashboard.html">Dashboard</a>
-      <a href="/admin/contributions.html">Contributions</a>
-      <a href="/admin/manage-contributions.html">Manage Contributions</a>
-      <a href="/admin/manage-accounts.html" class="active">Manage Accounts</a>
-      <a href="/admin/notifications.html">Notifications</a>
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/contributions">Contributions</a>
+      <a href="/admin/manage-contributions">Manage Contributions</a>
+      <a href="/admin/manage-accounts" class="active">Manage Accounts</a>
+      <a href="/admin/notifications">Notifications</a>
     </nav>
 
     <div class="admin-card">
@@ -64,6 +64,10 @@
         <tbody id="accounts-rows"></tbody>
       </table>
       <div id="accounts-empty"></div>
+      <div class="ledger-pagination">
+        <button type="button" class="btn-ghost" id="accounts-prev-page">Previous</button>
+        <button type="button" class="btn-ghost" id="accounts-next-page">Next</button>
+      </div>
     </div>
   </main>
 

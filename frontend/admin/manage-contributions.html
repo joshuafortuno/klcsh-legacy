@@ -13,15 +13,15 @@
 
   <header class="site-header">
     <div class="wrap header-inner">
-      <a href="/index.html" class="logo">
+      <a href="/" class="logo">
         <span class="logo-cube" aria-hidden="true"></span>
         KLCSH Legacy
       </a>
       <nav class="main-nav">
-        <a href="/index.html">Home</a>
-        <a href="/transactions/contributions.html">Contributions</a>
-        <a href="/contributors.html">Contributors</a>
-        <a href="/about.html">About</a>
+        <a href="/">Home</a>
+        <a href="/contributions">Contributions</a>
+        <a href="/contributors">Contributors</a>
+        <a href="/about">About</a>
       </nav>
       <div class="header-account" id="header-account"></div>
     </div>
@@ -34,11 +34,11 @@
     </div>
 
     <nav class="admin-nav">
-      <a href="/admin/dashboard.html">Dashboard</a>
-      <a href="/admin/contributions.html">Contributions</a>
-      <a href="/admin/manage-contributions.html" class="active">Manage Contributions</a>
-      <a href="/admin/manage-accounts.html">Manage Accounts</a>
-      <a href="/admin/notifications.html">Notifications</a>
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/contributions">Contributions</a>
+      <a href="/admin/manage-contributions" class="active">Manage Contributions</a>
+      <a href="/admin/manage-accounts">Manage Accounts</a>
+      <a href="/admin/notifications">Notifications</a>
     </nav>
 
     <!-- ===== PAYMENT SETTINGS ===== -->
@@ -117,6 +117,10 @@
         <tbody id="expense-rows"></tbody>
       </table>
       <div id="expense-empty"></div>
+      <div class="ledger-pagination">
+        <button type="button" class="btn-ghost" id="expense-prev-page">Previous</button>
+        <button type="button" class="btn-ghost" id="expense-next-page">Next</button>
+      </div>
 
       <hr class="section-divider" />
       <p><strong>Total: <span id="expense-total">₱0</span></strong></p>
@@ -159,6 +163,10 @@
         <tbody id="side-goal-rows"></tbody>
       </table>
       <div id="side-goal-empty"></div>
+      <div class="ledger-pagination">
+        <button type="button" class="btn-ghost" id="side-goal-prev-page">Previous</button>
+        <button type="button" class="btn-ghost" id="side-goal-next-page">Next</button>
+      </div>
     </div>
 
     <!-- ===== PAST PERIODS ===== -->
@@ -178,6 +186,10 @@
         <tbody id="past-period-rows"></tbody>
       </table>
       <div id="past-period-empty"></div>
+      <div class="ledger-pagination">
+        <button type="button" class="btn-ghost" id="past-period-prev-page">Previous</button>
+        <button type="button" class="btn-ghost" id="past-period-next-page">Next</button>
+      </div>
     </div>
   </main>
 

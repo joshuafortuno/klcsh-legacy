@@ -20,9 +20,14 @@
 
   Filtering happens client-side against each fetched list — this
   site isn't going to have thousands of rows in either, so there's
-  no need for server-side pagination or search.
+  no need for server-side pagination or search. Both tables page
+  their filtered results 10 at a time (same PAGE_SIZE/pattern as
+  the member-facing ledger) — each table tracks its own current
+  page independently.
   --------------------------------------------------------
 */
+
+const PAGE_SIZE = 10;
 
 function money(n) {
   return `₱${Number(n).toLocaleString()}`;
@@ -43,6 +48,7 @@ function targetLabel(row) {
 }
 
 let allSubmissions = [];
+let submissionsPage = 1;
 
 function renderRows() {
   const status = document.getElementById("status-filter").value;
@@ -56,15 +62,24 @@ function renderRows() {
 
   const rowsEl = document.getElementById("contributions-rows");
   const emptyEl = document.getElementById("contributions-empty");
+  const prevBtn = document.getElementById("contributions-prev-page");
+  const nextBtn = document.getElementById("contributions-next-page");
 
   if (filtered.length === 0) {
     rowsEl.innerHTML = "";
     emptyEl.innerHTML = `<div class="admin-empty">No submissions match.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  submissionsPage = Math.min(submissionsPage, totalPages);
+  const start = (submissionsPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
   emptyEl.innerHTML = "";
-  rowsEl.innerHTML = filtered.map(row => `
+  rowsEl.innerHTML = pageItems.map(row => `
     <tr>
       <td>${row.in_game_name}</td>
       <td>${targetLabel(row)}</td>
@@ -73,6 +88,9 @@ function renderRows() {
       <td>${formatDate(row.submitted_at)}</td>
     </tr>
   `).join("");
+
+  prevBtn.disabled = submissionsPage <= 1;
+  nextBtn.disabled = submissionsPage >= totalPages;
 }
 
 async function loadContributions() {
@@ -87,8 +105,22 @@ async function loadContributions() {
   allSubmissions = data || [];
   renderRows();
 
-  document.getElementById("status-filter").addEventListener("change", renderRows);
-  document.getElementById("name-filter").addEventListener("input", renderRows);
+  document.getElementById("status-filter").addEventListener("change", () => {
+    submissionsPage = 1;
+    renderRows();
+  });
+  document.getElementById("name-filter").addEventListener("input", () => {
+    submissionsPage = 1;
+    renderRows();
+  });
+  document.getElementById("contributions-prev-page").addEventListener("click", () => {
+    submissionsPage -= 1;
+    renderRows();
+  });
+  document.getElementById("contributions-next-page").addEventListener("click", () => {
+    submissionsPage += 1;
+    renderRows();
+  });
 }
 
 // ---------- historical (legacy_contributions) ----------
@@ -99,6 +131,7 @@ function escapeAttr(s) {
 
 let allLegacy = [];
 let editingLegacyId = null; // id of the row currently in edit mode, if any
+let legacyPage = 1;
 
 function renderLegacyRows() {
   const needle = document.getElementById("legacy-name-filter").value.trim().toLowerCase();
@@ -109,15 +142,24 @@ function renderLegacyRows() {
 
   const rowsEl = document.getElementById("legacy-rows");
   const emptyEl = document.getElementById("legacy-empty");
+  const prevBtn = document.getElementById("legacy-prev-page");
+  const nextBtn = document.getElementById("legacy-next-page");
 
   if (filtered.length === 0) {
     rowsEl.innerHTML = "";
     emptyEl.innerHTML = `<div class="admin-empty">No historical contributions match.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  legacyPage = Math.min(legacyPage, totalPages);
+  const start = (legacyPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
   emptyEl.innerHTML = "";
-  rowsEl.innerHTML = filtered.map(row => {
+  rowsEl.innerHTML = pageItems.map(row => {
     if (row.id === editingLegacyId) {
       return `
         <tr>
@@ -147,6 +189,9 @@ function renderLegacyRows() {
       </tr>
     `;
   }).join("");
+
+  prevBtn.disabled = legacyPage <= 1;
+  nextBtn.disabled = legacyPage >= totalPages;
 
   wireLegacyRowEvents();
 }
@@ -227,7 +272,18 @@ async function loadLegacyContributions() {
 
   // Wired once — loadLegacyContributions() only ever runs on page load,
   // rows themselves get re-wired on every render (see wireLegacyRowEvents).
-  document.getElementById("legacy-name-filter").addEventListener("input", renderLegacyRows);
+  document.getElementById("legacy-name-filter").addEventListener("input", () => {
+    legacyPage = 1;
+    renderLegacyRows();
+  });
+  document.getElementById("legacy-prev-page").addEventListener("click", () => {
+    legacyPage -= 1;
+    renderLegacyRows();
+  });
+  document.getElementById("legacy-next-page").addEventListener("click", () => {
+    legacyPage += 1;
+    renderLegacyRows();
+  });
 
   document.getElementById("legacy-add-form").addEventListener("submit", async (e) => {
     e.preventDefault();

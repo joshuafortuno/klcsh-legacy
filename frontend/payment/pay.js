@@ -22,7 +22,7 @@
   - Remaining balance: due − sum of your own approved payments for
     the current period, via the self-view RLS policy that was
     already there. Your full submission history (all periods, all
-    statuses) moved to its own page — see /user/my-contributions.html,
+    statuses) moved to its own page — see /my-contributions,
     reachable from the profile dropdown — this page only needs the
     current period's number.
   --------------------------------------------------------

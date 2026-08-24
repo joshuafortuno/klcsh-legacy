@@ -10,11 +10,14 @@
   exactly one FK target, so it resolves without needing to name
   the relationship explicitly).
 
-  Fetched once, filtered client-side by the status dropdown — this
-  is one member's own history, never going to be large enough to
-  need server-side filtering.
+  Fetched once, filtered client-side by the status dropdown, and
+  paged 10 at a time — a member submitting monthly dues plus the
+  occasional side-goal chip-in will pass 10 rows within a year or
+  so, so this is worth paging from the start.
   --------------------------------------------------------
 */
+
+const PAGE_SIZE = 10;
 
 function money(n) {
   return `₱${Number(n).toLocaleString()}`;
@@ -34,6 +37,7 @@ function targetLabel(row) {
 }
 
 let allMyContributions = [];
+let myContributionsPage = 1;
 
 function renderMyContributions() {
   const status = document.getElementById("my-status-filter").value;
@@ -44,15 +48,24 @@ function renderMyContributions() {
 
   const listEl = document.getElementById("my-contributions-list");
   const emptyEl = document.getElementById("my-contributions-empty");
+  const prevBtn = document.getElementById("my-contributions-prev-page");
+  const nextBtn = document.getElementById("my-contributions-next-page");
 
   if (filtered.length === 0) {
     listEl.innerHTML = "";
     emptyEl.innerHTML = `<div class="ledger-empty">Nothing here yet.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  myContributionsPage = Math.min(myContributionsPage, totalPages);
+  const start = (myContributionsPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
   emptyEl.innerHTML = "";
-  listEl.innerHTML = filtered.map(row => `
+  listEl.innerHTML = pageItems.map(row => `
     <div class="ledger-row">
       <div class="ledger-who">
         <span class="ledger-name">${targetLabel(row)}</span>
@@ -65,6 +78,9 @@ function renderMyContributions() {
       </div>
     </div>
   `).join("");
+
+  prevBtn.disabled = myContributionsPage <= 1;
+  nextBtn.disabled = myContributionsPage >= totalPages;
 }
 
 async function loadMyContributions(user) {
@@ -83,5 +99,16 @@ async function loadMyContributions(user) {
   allMyContributions = data || [];
   renderMyContributions();
 
-  document.getElementById("my-status-filter").addEventListener("change", renderMyContributions);
+  document.getElementById("my-status-filter").addEventListener("change", () => {
+    myContributionsPage = 1;
+    renderMyContributions();
+  });
+  document.getElementById("my-contributions-prev-page").addEventListener("click", () => {
+    myContributionsPage -= 1;
+    renderMyContributions();
+  });
+  document.getElementById("my-contributions-next-page").addEventListener("click", () => {
+    myContributionsPage += 1;
+    renderMyContributions();
+  });
 }

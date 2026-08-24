@@ -14,12 +14,14 @@
   if someone bypassed this guard, Supabase would refuse to
   hand back any data they're not allowed to see.
 
-  Paths here are root-absolute ("/account/login.html") rather
-  than relative ("login.html") on purpose — this file gets
-  included from pages at different folder depths (index.html
-  at the root, contributions.html under transactions/), and a
-  relative redirect would resolve differently depending on
-  which page loaded it.
+  Paths here are root-absolute ("/login") rather than relative
+  ("login.html") on purpose — this file gets included from pages
+  at different folder depths (index.html at the root,
+  contributions.html under transactions/), and a relative
+  redirect would resolve differently depending on which page
+  loaded it. These are the pretty URLs from frontend/_redirects,
+  not the real file paths — e.g. "/login" actually serves
+  account/login.html underneath.
 
   requireAuth() is also where a first-time profile finally gets
   created — see finishPendingProfile() below for why it lives
@@ -31,7 +33,7 @@ async function requireAuth() {
   const { data: { session } } = await supabaseClient.auth.getSession();
 
   if (!session || !session.user.email_confirmed_at) {
-    window.location.href = "/account/login.html";
+    window.location.href = "/login";
     return null;
   }
 
@@ -176,9 +178,9 @@ async function renderAccountNav(user) {
           ${avatarSvg(gender)}
         </button>
         <div class="profile-dropdown" id="profile-dropdown" role="menu" hidden>
-          ${isAdmin ? `<a href="/admin/dashboard.html" role="menuitem">Admin Dashboard</a>` : ""}
-          <a href="/user/my-contributions.html" role="menuitem">My Contributions</a>
-          <a href="/user/settings.html" role="menuitem">Settings</a>
+          ${isAdmin ? `<a href="/admin/dashboard" role="menuitem">Admin Dashboard</a>` : ""}
+          <a href="/my-contributions" role="menuitem">My Contributions</a>
+          <a href="/settings" role="menuitem">Settings</a>
           <button type="button" id="sign-out-btn" role="menuitem">Sign out</button>
         </div>
       </div>
@@ -217,7 +219,7 @@ function wireProfileMenu() {
 
   document.getElementById("sign-out-btn").addEventListener("click", async () => {
     await supabaseClient.auth.signOut();
-    window.location.href = "/account/login.html";
+    window.location.href = "/login";
   });
 }
 

@@ -27,12 +27,12 @@ async function requireAdmin() {
   // it instead of silently bouncing to the homepage either way.
   if (error) {
     alert("Couldn't check admin access: " + error.message);
-    window.location.href = "/index.html";
+    window.location.href = "/";
     return null;
   }
 
   if (!isAdmin) {
-    window.location.href = "/index.html";
+    window.location.href = "/";
     return null;
   }
 

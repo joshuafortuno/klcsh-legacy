@@ -7,10 +7,15 @@
   change via admin_set_role()/admin_set_status() — both check
   is_admin() server-side and log to status_audit_log themselves,
   so this file just calls them and reports errors.
+
+  Paged 10 at a time — this lists every member, not just active
+  ones, so it grows with the community's full history.
   --------------------------------------------------------
 */
 
+const PAGE_SIZE = 10;
 let allProfiles = [];
+let accountsPage = 1;
 
 function renderRows() {
   const needle = document.getElementById("accounts-search").value.trim().toLowerCase();
@@ -23,15 +28,24 @@ function renderRows() {
 
   const rowsEl = document.getElementById("accounts-rows");
   const emptyEl = document.getElementById("accounts-empty");
+  const prevBtn = document.getElementById("accounts-prev-page");
+  const nextBtn = document.getElementById("accounts-next-page");
 
   if (filtered.length === 0) {
     rowsEl.innerHTML = "";
     emptyEl.innerHTML = `<div class="admin-empty">No members match.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  accountsPage = Math.min(accountsPage, totalPages);
+  const start = (accountsPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
   emptyEl.innerHTML = "";
-  rowsEl.innerHTML = filtered.map(p => `
+  rowsEl.innerHTML = pageItems.map(p => `
     <tr data-user-id="${p.id}">
       <td>${p.in_game_name}</td>
       <td>${p.real_name || "—"}</td>
@@ -53,6 +67,9 @@ function renderRows() {
   `).join("");
 
   wireRowEvents();
+
+  prevBtn.disabled = accountsPage <= 1;
+  nextBtn.disabled = accountsPage >= totalPages;
 }
 
 function wireRowEvents() {
@@ -107,5 +124,16 @@ async function loadAccounts() {
   allProfiles = data || [];
   renderRows();
 
-  document.getElementById("accounts-search").addEventListener("input", renderRows);
+  document.getElementById("accounts-search").addEventListener("input", () => {
+    accountsPage = 1;
+    renderRows();
+  });
+  document.getElementById("accounts-prev-page").addEventListener("click", () => {
+    accountsPage -= 1;
+    renderRows();
+  });
+  document.getElementById("accounts-next-page").addEventListener("click", () => {
+    accountsPage += 1;
+    renderRows();
+  });
 }

@@ -36,8 +36,15 @@
     edit its expenses like normal, then finalize again to
     recompute. Without ?period in the URL, this page defaults to
     whatever period is currently open.
+
+  Three lists on this page (expenses, side goals, past periods)
+  each page 10 at a time, same pattern as everywhere else on the
+  site — a busy month's expenses, or a couple years of finalized
+  periods, can both pass 10 easily.
   --------------------------------------------------------
 */
+
+const PAGE_SIZE = 10;
 
 function money(n) {
   return `₱${Number(n).toLocaleString()}`;
@@ -197,7 +204,7 @@ async function loadManageContributions() {
 
   const backLinkEl = document.getElementById("back-to-current");
   backLinkEl.innerHTML = requestedId
-    ? `<a href="/admin/manage-contributions.html">← Back to the current period</a>`
+    ? `<a href="/admin/manage-contributions">← Back to the current period</a>`
     : "";
 
   const finalizeBtn = document.getElementById("finalize-btn");
@@ -209,36 +216,39 @@ async function loadManageContributions() {
 
 // ---------- expenses ----------
 
-async function loadExpenses() {
-  const { data, error } = await supabaseClient
-    .from("expenses")
-    .select("id, category, amount")
-    .eq("period_id", currentPeriod.id)
-    .order("created_at", { ascending: true });
+let allExpenses = [];
+let expensePage = 1;
 
+function renderExpenses() {
   const rowsEl = document.getElementById("expense-rows");
   const emptyEl = document.getElementById("expense-empty");
-  const expenses = data || [];
+  const prevBtn = document.getElementById("expense-prev-page");
+  const nextBtn = document.getElementById("expense-next-page");
 
-  if (error) {
-    emptyEl.innerHTML = `<div class="admin-empty">Couldn't load expenses: ${error.message}</div>`;
+  const total = allExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  document.getElementById("expense-total").textContent = money(total);
+
+  if (allExpenses.length === 0) {
     rowsEl.innerHTML = "";
-  } else if (expenses.length === 0) {
     emptyEl.innerHTML = `<div class="admin-empty">No expenses logged yet this period.</div>`;
-    rowsEl.innerHTML = "";
-  } else {
-    emptyEl.innerHTML = "";
-    rowsEl.innerHTML = expenses.map(e => `
-      <tr>
-        <td>${e.category}</td>
-        <td class="num">${money(e.amount)}</td>
-        <td><button type="button" class="btn-small btn-reject" data-expense-id="${e.id}">Remove</button></td>
-      </tr>
-    `).join("");
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
   }
 
-  const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  document.getElementById("expense-total").textContent = money(total);
+  const totalPages = Math.max(1, Math.ceil(allExpenses.length / PAGE_SIZE));
+  expensePage = Math.min(expensePage, totalPages);
+  const start = (expensePage - 1) * PAGE_SIZE;
+  const pageItems = allExpenses.slice(start, start + PAGE_SIZE);
+
+  emptyEl.innerHTML = "";
+  rowsEl.innerHTML = pageItems.map(e => `
+    <tr>
+      <td>${e.category}</td>
+      <td class="num">${money(e.amount)}</td>
+      <td><button type="button" class="btn-small btn-reject" data-expense-id="${e.id}">Remove</button></td>
+    </tr>
+  `).join("");
 
   rowsEl.querySelectorAll("[data-expense-id]").forEach(btn => {
     btn.addEventListener("click", async () => {
@@ -252,38 +262,59 @@ async function loadExpenses() {
       loadExpenses();
     });
   });
+
+  prevBtn.disabled = expensePage <= 1;
+  nextBtn.disabled = expensePage >= totalPages;
+}
+
+async function loadExpenses() {
+  const { data, error } = await supabaseClient
+    .from("expenses")
+    .select("id, category, amount")
+    .eq("period_id", currentPeriod.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    document.getElementById("expense-empty").innerHTML = `<div class="admin-empty">Couldn't load expenses: ${error.message}</div>`;
+    document.getElementById("expense-rows").innerHTML = "";
+    return;
+  }
+
+  allExpenses = data || [];
+  renderExpenses();
 }
 
 // ---------- side goals ----------
 
-async function loadSideGoals() {
-  const { data, error } = await supabaseClient
-    .from("side_goals")
-    .select("id, title, target, status")
-    .order("created_at", { ascending: false });
+let allSideGoals = [];
+let sideGoalPage = 1;
 
+async function renderSideGoals() {
   const rowsEl = document.getElementById("side-goal-rows");
   const emptyEl = document.getElementById("side-goal-empty");
-  const goals = data || [];
+  const prevBtn = document.getElementById("side-goal-prev-page");
+  const nextBtn = document.getElementById("side-goal-next-page");
 
-  if (error) {
-    emptyEl.innerHTML = `<div class="admin-empty">Couldn't load side goals: ${error.message}</div>`;
+  if (allSideGoals.length === 0) {
     rowsEl.innerHTML = "";
-    return;
-  }
-  if (goals.length === 0) {
     emptyEl.innerHTML = `<div class="admin-empty">No side goals yet.</div>`;
-    rowsEl.innerHTML = "";
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
+
+  const totalPages = Math.max(1, Math.ceil(allSideGoals.length / PAGE_SIZE));
+  sideGoalPage = Math.min(sideGoalPage, totalPages);
+  const start = (sideGoalPage - 1) * PAGE_SIZE;
+  const pageItems = allSideGoals.slice(start, start + PAGE_SIZE);
 
   emptyEl.innerHTML = "";
 
   const progressResults = await Promise.all(
-    goals.map(g => supabaseClient.rpc("side_goal_progress", { p_side_goal_id: g.id }))
+    pageItems.map(g => supabaseClient.rpc("side_goal_progress", { p_side_goal_id: g.id }))
   );
 
-  rowsEl.innerHTML = goals.map((g, i) => `
+  rowsEl.innerHTML = pageItems.map((g, i) => `
     <tr>
       <td>${g.title}</td>
       <td class="num">${money(progressResults[i].data || 0)} / ${money(g.target)}</td>
@@ -311,9 +342,66 @@ async function loadSideGoals() {
       loadSideGoals();
     });
   });
+
+  prevBtn.disabled = sideGoalPage <= 1;
+  nextBtn.disabled = sideGoalPage >= totalPages;
+}
+
+async function loadSideGoals() {
+  const { data, error } = await supabaseClient
+    .from("side_goals")
+    .select("id, title, target, status")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    document.getElementById("side-goal-empty").innerHTML = `<div class="admin-empty">Couldn't load side goals: ${error.message}</div>`;
+    document.getElementById("side-goal-rows").innerHTML = "";
+    return;
+  }
+
+  allSideGoals = data || [];
+  await renderSideGoals();
 }
 
 // ---------- past periods ----------
+
+let allPastPeriods = [];
+let pastPeriodPage = 1;
+
+function renderPastPeriods() {
+  const rowsEl = document.getElementById("past-period-rows");
+  const emptyEl = document.getElementById("past-period-empty");
+  const prevBtn = document.getElementById("past-period-prev-page");
+  const nextBtn = document.getElementById("past-period-next-page");
+
+  if (allPastPeriods.length === 0) {
+    rowsEl.innerHTML = "";
+    emptyEl.innerHTML = `<div class="admin-empty">No periods finalized yet.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(allPastPeriods.length / PAGE_SIZE));
+  pastPeriodPage = Math.min(pastPeriodPage, totalPages);
+  const start = (pastPeriodPage - 1) * PAGE_SIZE;
+  const pageItems = allPastPeriods.slice(start, start + PAGE_SIZE);
+
+  emptyEl.innerHTML = "";
+  rowsEl.innerHTML = pageItems.map(p => `
+    <tr>
+      <td>${monthLabel(p.month)}</td>
+      <td>${p.title || "—"}</td>
+      <td class="num">${money(p.total_expenses)}</td>
+      <td class="num">${money(p.amount_due_per_member)}</td>
+      <td class="num">${money(p.surplus_carried_out)}</td>
+      <td><a href="/admin/manage-contributions?period=${p.id}">Edit</a></td>
+    </tr>
+  `).join("");
+
+  prevBtn.disabled = pastPeriodPage <= 1;
+  nextBtn.disabled = pastPeriodPage >= totalPages;
+}
 
 async function loadPastPeriods() {
   const { data, error } = await supabaseClient
@@ -322,31 +410,13 @@ async function loadPastPeriods() {
     .eq("status", "finalized")
     .order("month", { ascending: false });
 
-  const rowsEl = document.getElementById("past-period-rows");
-  const emptyEl = document.getElementById("past-period-empty");
-  const periods = data || [];
-
   if (error) {
-    emptyEl.innerHTML = `<div class="admin-empty">Couldn't load past periods: ${error.message}</div>`;
-    return;
-  }
-  if (periods.length === 0) {
-    emptyEl.innerHTML = `<div class="admin-empty">No periods finalized yet.</div>`;
-    rowsEl.innerHTML = "";
+    document.getElementById("past-period-empty").innerHTML = `<div class="admin-empty">Couldn't load past periods: ${error.message}</div>`;
     return;
   }
 
-  emptyEl.innerHTML = "";
-  rowsEl.innerHTML = periods.map(p => `
-    <tr>
-      <td>${monthLabel(p.month)}</td>
-      <td>${p.title || "—"}</td>
-      <td class="num">${money(p.total_expenses)}</td>
-      <td class="num">${money(p.amount_due_per_member)}</td>
-      <td class="num">${money(p.surplus_carried_out)}</td>
-      <td><a href="/admin/manage-contributions.html?period=${p.id}">Edit</a></td>
-    </tr>
-  `).join("");
+  allPastPeriods = data || [];
+  renderPastPeriods();
 }
 
 // ---------- form wiring (only needs to happen once) ----------
@@ -356,6 +426,31 @@ let eventsWired = false;
 function wireEvents() {
   if (eventsWired) return;
   eventsWired = true;
+
+  document.getElementById("expense-prev-page").addEventListener("click", () => {
+    expensePage -= 1;
+    renderExpenses();
+  });
+  document.getElementById("expense-next-page").addEventListener("click", () => {
+    expensePage += 1;
+    renderExpenses();
+  });
+  document.getElementById("side-goal-prev-page").addEventListener("click", () => {
+    sideGoalPage -= 1;
+    renderSideGoals();
+  });
+  document.getElementById("side-goal-next-page").addEventListener("click", () => {
+    sideGoalPage += 1;
+    renderSideGoals();
+  });
+  document.getElementById("past-period-prev-page").addEventListener("click", () => {
+    pastPeriodPage -= 1;
+    renderPastPeriods();
+  });
+  document.getElementById("past-period-next-page").addEventListener("click", () => {
+    pastPeriodPage += 1;
+    renderPastPeriods();
+  });
 
   document.getElementById("save-title-btn").addEventListener("click", async () => {
     const title = document.getElementById("goal-title").value.trim();
@@ -457,6 +552,6 @@ function wireEvents() {
     // past period reached via the Edit link (?period=<id> in the
     // URL), head back to the current open period afterward rather
     // than staying parked on the one just closed out.
-    window.location.href = "/admin/manage-contributions.html";
+    window.location.href = "/admin/manage-contributions";
   });
 }

@@ -52,10 +52,10 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  // Verified and logged in — go to the dashboard. (index.html's
+  // Verified and logged in — go to the dashboard. (The homepage's
   // own requireAuth() call finishes creating the profile if
   // registration left one pending; see auth-guard.js.)
-  window.location.href = "/index.html";
+  window.location.href = "/";
 });
 
 resendBtn.addEventListener("click", async () => {

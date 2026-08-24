@@ -82,6 +82,6 @@ form.addEventListener("submit", async (e) => {
       We sent a confirmation link to <strong>${email}</strong>.
       Click it, then come back and log in.
     </p>
-    <a href="/account/login.html" class="btn-gold" style="display:block; text-align:center; text-decoration:none;">Go to login</a>
+    <a href="/login" class="btn-gold" style="display:block; text-align:center; text-decoration:none;">Go to login</a>
   `;
 });

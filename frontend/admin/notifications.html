@@ -13,15 +13,15 @@
 
   <header class="site-header">
     <div class="wrap header-inner">
-      <a href="/index.html" class="logo">
+      <a href="/" class="logo">
         <span class="logo-cube" aria-hidden="true"></span>
         KLCSH Legacy
       </a>
       <nav class="main-nav">
-        <a href="/index.html">Home</a>
-        <a href="/transactions/contributions.html">Contributions</a>
-        <a href="/contributors.html">Contributors</a>
-        <a href="/about.html">About</a>
+        <a href="/">Home</a>
+        <a href="/contributions">Contributions</a>
+        <a href="/contributors">Contributors</a>
+        <a href="/about">About</a>
       </nav>
       <div class="header-account" id="header-account"></div>
     </div>
@@ -34,11 +34,11 @@
     </div>
 
     <nav class="admin-nav">
-      <a href="/admin/dashboard.html">Dashboard</a>
-      <a href="/admin/contributions.html">Contributions</a>
-      <a href="/admin/manage-contributions.html">Manage Contributions</a>
-      <a href="/admin/manage-accounts.html">Manage Accounts</a>
-      <a href="/admin/notifications.html" class="active">Notifications</a>
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/contributions">Contributions</a>
+      <a href="/admin/manage-contributions">Manage Contributions</a>
+      <a href="/admin/manage-accounts">Manage Accounts</a>
+      <a href="/admin/notifications" class="active">Notifications</a>
     </nav>
 
     <!-- ===== PENDING PAYMENTS ===== -->
@@ -61,6 +61,10 @@
         <tbody id="payment-rows"></tbody>
       </table>
       <div id="payments-empty"></div>
+      <div class="ledger-pagination">
+        <button type="button" class="btn-ghost" id="payments-prev-page">Previous</button>
+        <button type="button" class="btn-ghost" id="payments-next-page">Next</button>
+      </div>
     </div>
 
     <!-- ===== PENDING STATUS REQUESTS ===== -->
@@ -81,6 +85,10 @@
         <tbody id="leave-rows"></tbody>
       </table>
       <div id="leave-empty"></div>
+      <div class="ledger-pagination">
+        <button type="button" class="btn-ghost" id="leave-prev-page">Previous</button>
+        <button type="button" class="btn-ghost" id="leave-next-page">Next</button>
+      </div>
     </div>
   </main>
 

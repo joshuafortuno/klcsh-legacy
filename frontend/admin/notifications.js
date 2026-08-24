@@ -6,8 +6,13 @@
   GCash reference for review) and leave requests (via
   admin_list_leave_requests('pending'), nothing encrypted there).
   Every approve/reject button calls a single admin_* function and
-  reloads its own queue — the database function does the actual
+  re-fetches its own queue — the database function does the actual
   work (and logging), this file just wires the buttons.
+
+  Both queues are meant to be worked down to zero regularly, so
+  they'll usually be short — but if review falls behind for a
+  while they can still pile up past 10, so both page the same way
+  every other list on the site does.
 
   Note on "Proof": screenshot_url is a private Storage object PATH
   (e.g. "‹user_id›/‹timestamp›-‹filename›"), not a public URL — the
@@ -15,6 +20,8 @@
   signed URL on demand rather than linking to it directly.
   --------------------------------------------------------
 */
+
+const PAGE_SIZE = 10;
 
 function money(n) {
   return `₱${Number(n).toLocaleString()}`;
@@ -36,26 +43,30 @@ function targetLabel(row) {
 
 // ---------- payments ----------
 
-async function loadPendingPayments() {
-  const { data, error } = await supabaseClient.rpc("admin_list_payment_submissions", { p_status: "pending" });
+let allPendingPayments = [];
+let paymentsPage = 1;
 
+function renderPaymentRows() {
   const rowsEl = document.getElementById("payment-rows");
   const emptyEl = document.getElementById("payments-empty");
+  const prevBtn = document.getElementById("payments-prev-page");
+  const nextBtn = document.getElementById("payments-next-page");
 
-  if (error) {
-    document.getElementById("payments-error").textContent = error.message;
-    return;
-  }
-
-  const rows = data || [];
-  if (rows.length === 0) {
+  if (allPendingPayments.length === 0) {
     rowsEl.innerHTML = "";
     emptyEl.innerHTML = `<div class="admin-empty">Nothing pending.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(allPendingPayments.length / PAGE_SIZE));
+  paymentsPage = Math.min(paymentsPage, totalPages);
+  const start = (paymentsPage - 1) * PAGE_SIZE;
+  const pageItems = allPendingPayments.slice(start, start + PAGE_SIZE);
+
   emptyEl.innerHTML = "";
-  rowsEl.innerHTML = rows.map(row => `
+  rowsEl.innerHTML = pageItems.map(row => `
     <tr data-submission-id="${row.id}">
       <td>${row.in_game_name}</td>
       <td>${targetLabel(row)}</td>
@@ -121,30 +132,49 @@ async function loadPendingPayments() {
       loadPendingPayments();
     });
   });
+
+  prevBtn.disabled = paymentsPage <= 1;
+  nextBtn.disabled = paymentsPage >= totalPages;
+}
+
+async function loadPendingPayments() {
+  const { data, error } = await supabaseClient.rpc("admin_list_payment_submissions", { p_status: "pending" });
+
+  if (error) {
+    document.getElementById("payments-error").textContent = error.message;
+    return;
+  }
+
+  allPendingPayments = data || [];
+  renderPaymentRows();
 }
 
 // ---------- leave requests ----------
 
-async function loadPendingLeaveRequests() {
-  const { data, error } = await supabaseClient.rpc("admin_list_leave_requests", { p_status: "pending" });
+let allPendingLeaveRequests = [];
+let leavePage = 1;
 
+function renderLeaveRows() {
   const rowsEl = document.getElementById("leave-rows");
   const emptyEl = document.getElementById("leave-empty");
+  const prevBtn = document.getElementById("leave-prev-page");
+  const nextBtn = document.getElementById("leave-next-page");
 
-  if (error) {
-    document.getElementById("leave-error").textContent = error.message;
-    return;
-  }
-
-  const rows = data || [];
-  if (rows.length === 0) {
+  if (allPendingLeaveRequests.length === 0) {
     rowsEl.innerHTML = "";
     emptyEl.innerHTML = `<div class="admin-empty">Nothing pending.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(allPendingLeaveRequests.length / PAGE_SIZE));
+  leavePage = Math.min(leavePage, totalPages);
+  const start = (leavePage - 1) * PAGE_SIZE;
+  const pageItems = allPendingLeaveRequests.slice(start, start + PAGE_SIZE);
+
   emptyEl.innerHTML = "";
-  rowsEl.innerHTML = rows.map(row => `
+  rowsEl.innerHTML = pageItems.map(row => `
     <tr data-request-id="${row.id}">
       <td>${row.in_game_name}</td>
       <td><span class="status-badge status-badge--${row.requested_status}">${row.requested_status}</span></td>
@@ -189,9 +219,41 @@ async function loadPendingLeaveRequests() {
       loadPendingLeaveRequests();
     });
   });
+
+  prevBtn.disabled = leavePage <= 1;
+  nextBtn.disabled = leavePage >= totalPages;
+}
+
+async function loadPendingLeaveRequests() {
+  const { data, error } = await supabaseClient.rpc("admin_list_leave_requests", { p_status: "pending" });
+
+  if (error) {
+    document.getElementById("leave-error").textContent = error.message;
+    return;
+  }
+
+  allPendingLeaveRequests = data || [];
+  renderLeaveRows();
 }
 
 function loadNotifications() {
   loadPendingPayments();
   loadPendingLeaveRequests();
+
+  document.getElementById("payments-prev-page").addEventListener("click", () => {
+    paymentsPage -= 1;
+    renderPaymentRows();
+  });
+  document.getElementById("payments-next-page").addEventListener("click", () => {
+    paymentsPage += 1;
+    renderPaymentRows();
+  });
+  document.getElementById("leave-prev-page").addEventListener("click", () => {
+    leavePage -= 1;
+    renderLeaveRows();
+  });
+  document.getElementById("leave-next-page").addEventListener("click", () => {
+    leavePage += 1;
+    renderLeaveRows();
+  });
 }

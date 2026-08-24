@@ -962,6 +962,54 @@ h1 {
 .contributor-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* =========================================================
+   UPDATES / INSTALL PAGE
+   ========================================================= */
+.updates-section { padding: 8px 0 72px; }
+
+.install-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 16px 0 36px;
+}
+
+.install-panel-info { flex: 1; min-width: 220px; }
+.install-panel-info .status-badge { margin-bottom: 8px; }
+
+.install-note {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: 6px 0 0;
+}
+
+.changelog-entry {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 14px;
+}
+
+.changelog-entry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.changelog-version { font-family: var(--font-display); font-size: 1.05rem; }
+.changelog-date { color: var(--text-dim); font-size: 0.85rem; }
+
+.changelog-entry ul { margin: 0; padding-left: 18px; color: var(--text-dim); }
+.changelog-entry li { margin-bottom: 4px; }
+
+/* =========================================================
    RESPONSIVE
    ========================================================= */
 @media (max-width: 640px) {
@@ -977,6 +1025,8 @@ h1 {
   .voxel-bar { grid-template-columns: repeat(16, 1fr); }
   .ledger-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .ledger-right { align-self: flex-end; }
+  .install-panel { flex-direction: column; align-items: stretch; }
+  .install-panel .btn-gold { width: 100%; text-align: center; }
 }
 
 /* reduced motion */

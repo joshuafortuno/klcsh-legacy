@@ -54,3 +54,71 @@ function monthLabel(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
+
+/*
+  Password strength — shared by every password-entry point
+  (register, Settings > change password, reset-password). One
+  definition so the live checklist and the submit-time error can
+  never drift out of sync with each other.
+
+  Deliberately does NOT restrict *which* special characters are
+  allowed, beyond requiring at least one — passwords here only ever
+  travel as a JSON field straight to Supabase Auth's API, never
+  interpolated into SQL, HTML, or a shell command, so there's no
+  injection surface to defend by narrowing the character set. Doing
+  so would only shrink the keyspace a brute-force has to search.
+*/
+const PASSWORD_MAX_LENGTH = 72; // bcrypt (what Supabase Auth hashes with) ignores anything past this
+
+const PASSWORD_RULES = [
+  { key: "length", label: "At least 8 characters", test: (pw) => pw.length >= 8 },
+  { key: "upper", label: "One uppercase letter", test: (pw) => /[A-Z]/.test(pw) },
+  { key: "number", label: "One number", test: (pw) => /[0-9]/.test(pw) },
+  { key: "special", label: "One special character", test: (pw) => /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~\\]/.test(pw) },
+];
+
+function passwordRuleResults(password) {
+  return PASSWORD_RULES.map((rule) => ({ ...rule, passed: rule.test(password) }));
+}
+
+// Submit-time gate. The live checklist below already covers
+// PASSWORD_RULES — this adds the two things that aren't a "did you
+// type X" checklist item: an upper bound so a pathological paste
+// doesn't get silently truncated by bcrypt without anyone knowing,
+// and catching an accidental leading/trailing space from a
+// copy-paste (never intentional, and easy to lose track of since
+// the field is masked).
+function passwordStrengthError(password) {
+  if (password.trim() !== password) {
+    return "Remove the leading or trailing space in your password.";
+  }
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    return `Password can't be longer than ${PASSWORD_MAX_LENGTH} characters.`;
+  }
+  const missing = passwordRuleResults(password).filter((r) => !r.passed).map((r) => r.label);
+  if (missing.length > 0) {
+    return "Password needs: " + missing.join(", ") + ".";
+  }
+  return null;
+}
+
+// Renders PASSWORD_RULES into checklistEl as a live-updating list —
+// each <li> gets a "rule-passed" class toggled on/off as inputEl is
+// typed into, using the exact same rule.test() the submit-time
+// passwordStrengthError() checks, so the checklist never shows all
+// green on something the submit handler would still reject.
+function initPasswordChecklist(inputEl, checklistEl) {
+  checklistEl.innerHTML = PASSWORD_RULES
+    .map((rule) => `<li data-rule="${rule.key}">${escapeHtml(rule.label)}</li>`)
+    .join("");
+
+  const update = () => {
+    const password = inputEl.value;
+    PASSWORD_RULES.forEach((rule) => {
+      checklistEl.querySelector(`[data-rule="${rule.key}"]`).classList.toggle("rule-passed", rule.test(password));
+    });
+  };
+
+  inputEl.addEventListener("input", update);
+  update();
+}

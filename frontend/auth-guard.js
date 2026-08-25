@@ -226,6 +226,8 @@ async function renderAccountNav(user) {
         <div class="profile-dropdown" id="profile-dropdown" role="menu" hidden>
           ${isAdmin ? `<a href="/admin/dashboard" role="menuitem">Admin Dashboard</a>` : ""}
           <a href="/my-contributions" role="menuitem">My Contributions</a>
+          <a href="/shop" role="menuitem">Shop</a>
+          <a href="/battlepass" role="menuitem">Battlepass</a>
           <a href="/updates" role="menuitem">Updates</a>
           <a href="/settings" role="menuitem">Settings</a>
           <button type="button" id="sign-out-btn" role="menuitem">Sign out</button>

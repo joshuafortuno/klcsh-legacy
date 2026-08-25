@@ -1,7 +1,7 @@
 /*
   MANAGE-CONTRIBUTIONS.JS
   --------------------------------------------------------
-  Four independent pieces on this page:
+  Five independent pieces on this page:
 
   - Payment settings: the GCash name/number shown to members on
     the payment page — a single row in site_settings, direct table
@@ -11,6 +11,10 @@
     database/07_site_assets.sql) at a fixed path, so re-uploading
     replaces the old one — a "?t=" cache-buster gets stored
     alongside the URL so browsers don't keep showing the stale one.
+
+  - Shop pricing: VIP/MVP/Legacy Pass prices, also in site_settings
+    (database/11_shop_core.sql) — shown to members on the payment
+    page, editable here so a price change doesn't need a deploy.
 
   - This month's goal: admin_get_or_create_open_period() always
     hands back a usable open period (creating this calendar
@@ -69,7 +73,7 @@ function renderQrPreview(url) {
 async function loadPaymentSettings() {
   const { data, error } = await supabaseClient
     .from("site_settings")
-    .select("gcash_name, gcash_number, gcash_qr_url")
+    .select("gcash_name, gcash_number, gcash_qr_url, vip_price, mvp_price, battlepass_price, vip_description, mvp_description, battlepass_description")
     .eq("id", 1)
     .single();
 
@@ -81,6 +85,14 @@ async function loadPaymentSettings() {
   document.getElementById("gcash-name").value = data.gcash_name || "";
   document.getElementById("gcash-number").value = data.gcash_number || "";
   renderQrPreview(data.gcash_qr_url);
+
+  document.getElementById("vip-price").value = data.vip_price;
+  document.getElementById("mvp-price").value = data.mvp_price;
+  document.getElementById("battlepass-price").value = data.battlepass_price;
+
+  document.getElementById("vip-description").value = data.vip_description || "";
+  document.getElementById("mvp-description").value = data.mvp_description || "";
+  document.getElementById("battlepass-description").value = data.battlepass_description || "";
 
   document.getElementById("save-settings-btn").addEventListener("click", async () => {
     const errorEl = document.getElementById("settings-error");
@@ -98,6 +110,63 @@ async function loadPaymentSettings() {
     if (updateError) {
       errorEl.textContent = updateError.message;
     }
+  });
+
+  document.getElementById("save-shop-prices-btn").addEventListener("click", async () => {
+    const errorEl = document.getElementById("shop-prices-error");
+    const successEl = document.getElementById("shop-prices-success");
+    errorEl.textContent = "";
+    successEl.textContent = "";
+
+    const vipPrice = parseFloat(document.getElementById("vip-price").value);
+    const mvpPrice = parseFloat(document.getElementById("mvp-price").value);
+    const battlepassPrice = parseFloat(document.getElementById("battlepass-price").value);
+
+    if (!(vipPrice >= 0) || !(mvpPrice >= 0) || !(battlepassPrice >= 0)) {
+      errorEl.textContent = "Enter a valid price (0 or more) for all three.";
+      return;
+    }
+
+    const { error: updateError } = await supabaseClient
+      .from("site_settings")
+      .update({
+        vip_price: vipPrice,
+        mvp_price: mvpPrice,
+        battlepass_price: battlepassPrice,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+
+    if (updateError) {
+      errorEl.textContent = updateError.message;
+      return;
+    }
+
+    successEl.textContent = "Prices updated.";
+  });
+
+  document.getElementById("save-shop-descriptions-btn").addEventListener("click", async () => {
+    const errorEl = document.getElementById("shop-descriptions-error");
+    const successEl = document.getElementById("shop-descriptions-success");
+    errorEl.textContent = "";
+    successEl.textContent = "";
+
+    const { error: updateError } = await supabaseClient
+      .from("site_settings")
+      .update({
+        vip_description: document.getElementById("vip-description").value.trim() || null,
+        mvp_description: document.getElementById("mvp-description").value.trim() || null,
+        battlepass_description: document.getElementById("battlepass-description").value.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+
+    if (updateError) {
+      errorEl.textContent = updateError.message;
+      return;
+    }
+
+    successEl.textContent = "Descriptions updated.";
   });
 
   // Uploading a file replaces the QR immediately — its own save

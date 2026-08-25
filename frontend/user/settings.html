@@ -76,6 +76,7 @@
           <label for="real-name">Real name</label>
           <input type="text" id="real-name" required autocomplete="name" />
           <p class="field-hint">Stored encrypted. Used only to match GCash sender names.</p>
+          <p class="field-warning" id="real-name-warning" role="status"></p>
 
           <label for="discord-username">Discord username <span class="optional">(optional)</span></label>
           <input type="text" id="discord-username" autocomplete="off" />
@@ -147,7 +148,7 @@
         <form id="password-form" class="form-styled" novalidate>
           <label for="new-password">New password</label>
           <input type="password" id="new-password" required minlength="8" autocomplete="new-password" />
-          <p class="field-hint">At least 8 characters.</p>
+          <ul class="password-checklist" id="password-checklist"></ul>
 
           <label for="confirm-password">Confirm new password</label>
           <input type="password" id="confirm-password" required minlength="8" autocomplete="new-password" />

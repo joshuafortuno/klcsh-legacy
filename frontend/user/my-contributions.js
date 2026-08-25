@@ -60,16 +60,22 @@ function renderMyContributions() {
 
   emptyEl.innerHTML = "";
   listEl.innerHTML = pageItems.map(row => `
-    <div class="ledger-row">
-      <div class="ledger-who">
-        <span class="ledger-name">${targetLabel(row)}</span>
+    <div class="ledger-row ledger-row--stacked">
+      <div class="ledger-row-main">
+        <div class="ledger-who">
+          <span class="ledger-name">${targetLabel(row)}</span>
+        </div>
+        <div class="ledger-right">
+          <span class="ledger-date">${formatDate(row.submitted_at)}</span>
+          <span class="ledger-amount">${money(row.amount_claimed)}</span>
+        </div>
+      </div>
+      <div class="ledger-tags">
         <span class="status-badge status-badge--${row.status}">${row.status}</span>
-        ${row.rejection_reason ? `<span class="ledger-msg">"${escapeHtml(row.rejection_reason)}"</span>` : ""}
+        ${row.rank_purchased ? `<span class="status-badge status-badge--${row.rank_purchased}">${row.rank_purchased}</span>` : ""}
+        ${row.battlepass_purchased ? `<span class="status-badge status-badge--battlepass">Battlepass</span>` : ""}
       </div>
-      <div class="ledger-right">
-        <span class="ledger-date">${formatDate(row.submitted_at)}</span>
-        <span class="ledger-amount">${money(row.amount_claimed)}</span>
-      </div>
+      ${row.rejection_reason ? `<div class="ledger-msg">"${escapeHtml(row.rejection_reason)}"</div>` : ""}
     </div>
   `).join("");
 
@@ -80,7 +86,7 @@ function renderMyContributions() {
 async function loadMyContributions(user) {
   const { data, error } = await supabaseClient
     .from("payment_submissions")
-    .select("id, amount_claimed, status, rejection_reason, submitted_at, periods(month), side_goals(title)")
+    .select("id, amount_claimed, status, rejection_reason, submitted_at, rank_purchased, battlepass_purchased, periods(month), side_goals(title)")
     .eq("user_id", user.id)
     .order("submitted_at", { ascending: false });
 

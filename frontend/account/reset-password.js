@@ -29,6 +29,8 @@ const doneNotice = document.getElementById("reset-done-notice");
 const resetError = document.getElementById("reset-error");
 const resetSubmitBtn = document.getElementById("reset-submit-btn");
 
+initPasswordChecklist(document.getElementById("new-password"), document.getElementById("password-checklist"));
+
 (async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
 
@@ -46,8 +48,9 @@ resetForm.addEventListener("submit", async (e) => {
   const newPassword = document.getElementById("new-password").value;
   const confirmPassword = document.getElementById("confirm-password").value;
 
-  if (newPassword.length < 8) {
-    resetError.textContent = "Password must be at least 8 characters.";
+  const passwordProblem = passwordStrengthError(newPassword);
+  if (passwordProblem) {
+    resetError.textContent = passwordProblem;
     return;
   }
   if (newPassword !== confirmPassword) {

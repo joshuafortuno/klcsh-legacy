@@ -1,6 +1,44 @@
-.auth-main { padding: 56px 0 80px; }
+.auth-main {
+  padding: 56px 0 80px;
+  position: relative;
+  overflow: hidden;
+}
 
 .auth-wrap { display: flex; justify-content: center; }
+
+/* =========================================================
+   AMBIENT BACKGROUND (login / register)
+   Extends the homepage hero's drifting-voxel motif (.floaty,
+   defined in style.css) across the whole auth page rather than a
+   one-off effect just for these two pages, plus a slow
+   "breathing" glow centered behind the card (glow-breathe is
+   defined once in style.css and shared with the home page's
+   .page-glow). Purely decorative — aria-hidden, and switched off
+   under prefers-reduced-motion via style.css's reduced-motion
+   block, which style.css is always loaded before this file so
+   the shared keyframe and reduced-motion rule are both in scope
+   on every page that uses these classes.
+   ========================================================= */
+.auth-card { position: relative; z-index: 1; }
+
+.auth-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 640px;
+  height: 640px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(111, 217, 74, 0.14), transparent 70%);
+  animation: glow-breathe 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.auth-floaty-1 { width: 20px; height: 20px; top: 10%; left: 8%; animation-delay: 0s; }
+.auth-floaty-2 { width: 14px; height: 14px; top: 78%; left: 12%; animation-delay: 2s; background: linear-gradient(160deg, var(--gold), var(--gold-dark)); }
+.auth-floaty-3 { width: 18px; height: 18px; top: 20%; right: 10%; animation-delay: 1s; }
+.auth-floaty-4 { width: 16px; height: 16px; top: 70%; right: 6%; animation-delay: 3.5s; background: linear-gradient(160deg, var(--gold), var(--gold-dark)); }
+.auth-floaty-5 { width: 12px; height: 12px; top: 45%; left: 3%; animation-delay: 2.7s; }
+.auth-floaty-6 { width: 22px; height: 22px; top: 50%; right: 3%; animation-delay: 0.8s; }
 
 /* narrower centered column for stacked cards that aren't a
    side-by-side row — used by the payment page. Doesn't carry
@@ -150,6 +188,54 @@
   font-size: 0.78rem;
   color: var(--text-faint);
   margin-top: 5px;
+}
+
+/* Live password-strength checklist, populated and kept in sync by
+   initPasswordChecklist() in utils.js — one rule per <li>, turning
+   from a hollow dot to a checked emerald dot as it's satisfied. */
+.password-checklist {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.password-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  transition: color 0.15s ease;
+}
+
+.password-checklist li::before {
+  content: "○";
+  font-size: 0.65rem;
+  color: var(--text-faint);
+  transition: color 0.15s ease;
+}
+
+.password-checklist li.rule-passed {
+  color: var(--text-dim);
+}
+
+.password-checklist li.rule-passed::before {
+  content: "✓";
+  font-size: 0.75rem;
+  color: var(--emerald);
+}
+
+/* Soft, non-blocking heads-up (e.g. "someone else already has this
+   real name") — distinct from .form-error, since this never stops
+   the form from being submitted. */
+.field-warning {
+  font-size: 0.78rem;
+  color: var(--gold);
+  margin-top: 5px;
+  min-height: 1em;
 }
 
 .checkbox-row {

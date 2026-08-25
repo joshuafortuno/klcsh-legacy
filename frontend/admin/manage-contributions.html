@@ -99,6 +99,46 @@
       <p class="form-success" id="qr-success" role="status"></p>
     </div>
 
+    <!-- ===== SHOP PRICING ===== -->
+    <div class="admin-card">
+      <h2>Shop pricing</h2>
+      <p class="admin-card-sub">What members pay for a rank or the Legacy Pass — shown on the payment page.</p>
+
+      <div class="inline-form">
+        <div class="field">
+          <label for="vip-price">VIP (₱)</label>
+          <input type="number" id="vip-price" min="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label for="mvp-price">MVP (₱)</label>
+          <input type="number" id="mvp-price" min="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label for="battlepass-price">Legacy Pass (₱)</label>
+          <input type="number" id="battlepass-price" min="0" step="0.01" />
+        </div>
+        <button type="button" class="btn-small" id="save-shop-prices-btn">Save prices</button>
+      </div>
+      <p class="form-error" id="shop-prices-error" role="alert"></p>
+      <p class="form-success" id="shop-prices-success" role="status"></p>
+
+      <hr class="section-divider" />
+      <p class="admin-card-sub">What each one actually gets you in-game — shown on the Shop page.</p>
+
+      <label for="vip-description" class="field-label">VIP description</label>
+      <textarea id="vip-description" class="admin-textarea" rows="2" placeholder="e.g. Colored name, /fly, exclusive kits"></textarea>
+
+      <label for="mvp-description" class="field-label">MVP description</label>
+      <textarea id="mvp-description" class="admin-textarea" rows="2" placeholder="Everything VIP gets, plus..."></textarea>
+
+      <label for="battlepass-description" class="field-label">Legacy Pass description</label>
+      <textarea id="battlepass-description" class="admin-textarea" rows="2" placeholder="31 days of daily login rewards..."></textarea>
+
+      <button type="button" class="btn-small" id="save-shop-descriptions-btn">Save descriptions</button>
+      <p class="form-error" id="shop-descriptions-error" role="alert"></p>
+      <p class="form-success" id="shop-descriptions-success" role="status"></p>
+    </div>
+
     <!-- ===== THIS MONTH'S GOAL ===== -->
     <div class="admin-card">
       <h2 id="period-heading">This month's goal</h2>

@@ -25,6 +25,8 @@ const form = document.getElementById("register-form");
 const errorEl = document.getElementById("form-error");
 const submitBtn = document.getElementById("submit-btn");
 
+initPasswordChecklist(document.getElementById("password"), document.getElementById("password-checklist"));
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorEl.textContent = "";
@@ -41,8 +43,9 @@ form.addEventListener("submit", async (e) => {
     errorEl.textContent = "Please fill in all required fields.";
     return;
   }
-  if (password.length < 8) {
-    errorEl.textContent = "Password must be at least 8 characters.";
+  const passwordProblem = passwordStrengthError(password);
+  if (passwordProblem) {
+    errorEl.textContent = passwordProblem;
     return;
   }
   if (!consented) {

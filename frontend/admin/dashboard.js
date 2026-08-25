@@ -51,7 +51,9 @@ async function loadDashboard() {
 
   const period = periodResult.data;
   const activeCount = activeCountResult.count || 0;
-  const counts = countsResult.data && countsResult.data[0] ? countsResult.data[0] : { pending_payments: 0, pending_leave_requests: 0 };
+  const counts = countsResult.data && countsResult.data[0]
+    ? countsResult.data[0]
+    : { pending_payments: 0, pending_leave_requests: 0, expired_ranks: 0, pending_deliveries: 0 };
 
   let goalTotal = 0;
   let raised = 0;
@@ -64,7 +66,7 @@ async function loadDashboard() {
     raised = progressResult.data || 0;
   }
 
-  const pendingTotal = counts.pending_payments + counts.pending_leave_requests;
+  const pendingTotal = counts.pending_payments + counts.pending_leave_requests + counts.expired_ranks + counts.pending_deliveries;
 
   statsEl.innerHTML = `
     <div class="admin-stat">

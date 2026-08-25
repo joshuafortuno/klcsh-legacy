@@ -2,12 +2,16 @@
   LEDGER.JS — the full contributions page
   --------------------------------------------------------
   Reads the full public ledger via public_contribution_ledger()
-  (database/09_public_ledger.sql) — a union of the pre-launch
-  legacy_contributions history and every APPROVED live
-  payment_submissions row, so this list actually keeps growing as
-  real payments clear instead of staying frozen at the historical
-  import. money()/formatDate()/escapeHtml() come from /utils.js,
-  loaded before this file.
+  (database/13_shop_display.sql, extending 09_public_ledger.sql) —
+  a union of the pre-launch legacy_contributions history and every
+  APPROVED live payment_submissions row, so this list actually keeps
+  growing as real payments clear instead of staying frozen at the
+  historical import. Live rows also carry what the payment was
+  actually for (dues/side-goal, rank, Legacy Pass) — legacy rows
+  predate all of that, so they report none of it and just render as
+  a plain single line, same as they always have.
+  money()/formatDate()/escapeHtml() come from /utils.js, loaded
+  before this file.
 
   Fetched once into `allContributions`, then search + pagination
   both work against that in-memory list — this site isn't going
@@ -21,17 +25,41 @@ function renderLedgerRows(contributions) {
     return `<div class="ledger-empty">No contributions match that search.</div>`;
   }
 
-  return contributions.map(c => `
-    <div class="ledger-row">
-      <div class="ledger-who">
-        <span class="ledger-name">${escapeHtml(c.name)}</span>
+  return contributions.map(c => {
+    const tags = [];
+    if (c.targetLabel) tags.push(`<span class="status-badge status-badge--open">${escapeHtml(c.targetLabel)}</span>`);
+    if (c.rankPurchased) tags.push(`<span class="status-badge status-badge--${c.rankPurchased}">${c.rankPurchased}</span>`);
+    if (c.battlepassPurchased) tags.push(`<span class="status-badge status-badge--battlepass">Battlepass</span>`);
+
+    if (tags.length === 0) {
+      return `
+        <div class="ledger-row">
+          <div class="ledger-who">
+            <span class="ledger-name">${escapeHtml(c.name)}</span>
+          </div>
+          <div class="ledger-right">
+            <span class="ledger-date">${formatDate(c.date)}</span>
+            <span class="ledger-amount">+${money(c.amount)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="ledger-row ledger-row--stacked">
+        <div class="ledger-row-main">
+          <div class="ledger-who">
+            <span class="ledger-name">${escapeHtml(c.name)}</span>
+          </div>
+          <div class="ledger-right">
+            <span class="ledger-date">${formatDate(c.date)}</span>
+            <span class="ledger-amount">+${money(c.amount)}</span>
+          </div>
+        </div>
+        <div class="ledger-tags">${tags.join("")}</div>
       </div>
-      <div class="ledger-right">
-        <span class="ledger-date">${formatDate(c.date)}</span>
-        <span class="ledger-amount">+${money(c.amount)}</span>
-      </div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
 const PAGE_SIZE = 10;
@@ -75,6 +103,9 @@ async function loadLedger() {
       name: row.contributor_name,
       amount: row.amount,
       date: row.contributed_on,
+      targetLabel: row.target_label,
+      rankPurchased: row.rank_purchased,
+      battlepassPurchased: row.battlepass_purchased,
     }))
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 

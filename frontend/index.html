@@ -22,6 +22,17 @@
     })();
   </script>
 
+  <!-- Fixed decorative layer behind everything — see .page-ambient
+       in style.css. -->
+  <div class="page-ambient" aria-hidden="true">
+    <span class="floaty page-floaty-1"></span>
+    <span class="floaty page-floaty-2"></span>
+    <span class="floaty page-floaty-3"></span>
+    <span class="floaty page-floaty-4"></span>
+    <span class="floaty page-floaty-5"></span>
+    <div class="page-glow"></div>
+  </div>
+
   <!-- ===== HEADER ===== -->
   <header class="site-header">
     <div class="wrap header-inner">
@@ -82,8 +93,10 @@
         </p>
         <a href="/contributions" class="see-all">See the full ledger →</a>
       </div>
-      <div class="goal-card" id="spotlight-goal">
-        <!-- filled by script.js -->
+      <div class="goal-card-glow">
+        <div class="goal-card" id="spotlight-goal">
+          <!-- filled by script.js -->
+        </div>
       </div>
     </section>
 

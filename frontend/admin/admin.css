@@ -170,6 +170,28 @@
 
 .inline-form .field--grow { flex: 1; min-width: 160px; }
 
+/* standalone label + textarea pairs (shop descriptions) — not
+   inside .inline-form since those want a compact side-by-side
+   layout, these want full-width stacked fields */
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  margin: 14px 0 4px;
+}
+
+.admin-textarea {
+  width: 100%;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
 .admin-role-select,
 .admin-status-select {
   background: var(--panel-raised);

@@ -112,10 +112,30 @@ async function loadProfile(user) {
   renderProfileUI();
 }
 
+// Soft, non-blocking heads-up — never prevents saving, just flags
+// that another account already has this exact real name (case/
+// whitespace-insensitive) so a member can double-check before
+// submitting. is_real_name_taken() excludes the caller's own row,
+// so re-saving your own unchanged name never warns about yourself.
+const realNameInput = document.getElementById("real-name");
+const realNameWarning = document.getElementById("real-name-warning");
+
+realNameInput.addEventListener("blur", async () => {
+  const value = realNameInput.value.trim();
+  realNameWarning.textContent = "";
+  if (!value) return;
+
+  const { data: taken } = await supabaseClient.rpc("is_real_name_taken", { p_real_name: value });
+  if (taken) {
+    realNameWarning.textContent = "Someone else has already registered this name — if that's not you, double check.";
+  }
+});
+
 profileEditBtn.addEventListener("click", () => {
   editing = true;
   profileError.textContent = "";
   profileSuccess.textContent = "";
+  realNameWarning.textContent = "";
   renderProfileUI();
 });
 
@@ -123,6 +143,7 @@ profileForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   profileError.textContent = "";
   profileSuccess.textContent = "";
+  realNameWarning.textContent = "";
 
   const inGameName = document.getElementById("in-game-name").value.trim();
   const realName = document.getElementById("real-name").value.trim();
@@ -181,7 +202,15 @@ profileForm.addEventListener("submit", async (e) => {
   profileSubmitBtn.textContent = "Save changes";
 
   if (updateError || nameError) {
-    profileError.textContent = "Couldn't save your profile: " + (updateError || nameError).message;
+    // This particular update goes straight through a column-level
+    // grant, not a wrapping function (see the file header) — so a
+    // uniqueness violation surfaces as Postgres's raw constraint
+    // error (code 23505) instead of a friendly custom message like
+    // create_profile() raises. Translate it here instead.
+    const err = updateError || nameError;
+    profileError.textContent = err.code === "23505"
+      ? "That in-game name or Discord username is already in use by another account."
+      : "Couldn't save your profile: " + err.message;
     return;
   }
 
@@ -229,6 +258,8 @@ const passwordError = document.getElementById("password-error");
 const passwordSuccess = document.getElementById("password-success");
 const passwordSubmitBtn = document.getElementById("password-submit-btn");
 
+initPasswordChecklist(document.getElementById("new-password"), document.getElementById("password-checklist"));
+
 passwordForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   passwordError.textContent = "";
@@ -237,8 +268,9 @@ passwordForm.addEventListener("submit", async (e) => {
   const newPassword = document.getElementById("new-password").value;
   const confirmPassword = document.getElementById("confirm-password").value;
 
-  if (newPassword.length < 8) {
-    passwordError.textContent = "Password must be at least 8 characters.";
+  const passwordProblem = passwordStrengthError(newPassword);
+  if (passwordProblem) {
+    passwordError.textContent = passwordProblem;
     return;
   }
   if (newPassword !== confirmPassword) {

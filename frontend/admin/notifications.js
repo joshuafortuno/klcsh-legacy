@@ -1,18 +1,23 @@
 /*
   NOTIFICATIONS.JS
   --------------------------------------------------------
-  Two independent pending queues on one page: payments (via
+  Four independent pending queues on one page: payments (via
   admin_list_payment_submissions('pending'), which decrypts each
-  GCash reference for review) and leave requests (via
-  admin_list_leave_requests('pending'), nothing encrypted there).
-  Every approve/reject button calls a single admin_* function and
-  re-fetches its own queue — the database function does the actual
-  work (and logging), this file just wires the buttons.
+  GCash reference for review), leave requests (via
+  admin_list_leave_requests('pending'), nothing encrypted there),
+  expired ranks (admin_list_expired_ranks() — nothing auto-clears a
+  rank, this is the only way one goes back to "none"), and pending
+  in-game deliveries (admin_list_pending_deliveries() — a manual
+  fallback over the same queue the addon-bridge will eventually work
+  automatically, needed since that addon doesn't exist yet). Every
+  action button calls a single admin_* function and re-fetches its
+  own queue — the database function does the actual work (and
+  logging), this file just wires the buttons.
 
-  Both queues are meant to be worked down to zero regularly, so
+  All four queues are meant to be worked down to zero regularly, so
   they'll usually be short — but if review falls behind for a
-  while they can still pile up past 10, so both page the same way
-  every other list on the site does.
+  while they can still pile up past 10, so all four page the same
+  way every other list on the site does.
 
   Note on "Proof": screenshot_url is a private Storage object PATH
   (e.g. "‹user_id›/‹timestamp›-‹filename›"), not a public URL — the
@@ -234,9 +239,151 @@ async function loadPendingLeaveRequests() {
   renderLeaveRows();
 }
 
+// ---------- expired ranks ----------
+
+let allExpiredRanks = [];
+let ranksPage = 1;
+
+function renderRankRows() {
+  const rowsEl = document.getElementById("rank-rows");
+  const emptyEl = document.getElementById("ranks-empty");
+  const prevBtn = document.getElementById("ranks-prev-page");
+  const nextBtn = document.getElementById("ranks-next-page");
+
+  if (allExpiredRanks.length === 0) {
+    rowsEl.innerHTML = "";
+    emptyEl.innerHTML = `<div class="admin-empty">Nothing pending.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(allExpiredRanks.length / PAGE_SIZE));
+  ranksPage = Math.min(ranksPage, totalPages);
+  const start = (ranksPage - 1) * PAGE_SIZE;
+  const pageItems = allExpiredRanks.slice(start, start + PAGE_SIZE);
+
+  emptyEl.innerHTML = "";
+  rowsEl.innerHTML = pageItems.map(row => `
+    <tr>
+      <td>${escapeHtml(row.in_game_name)}</td>
+      <td><span class="status-badge status-badge--admin">${row.rank}</span></td>
+      <td>${formatDate(row.rank_expires_at)}</td>
+      <td>
+        <div class="row-actions">
+          <button type="button" class="btn-small btn-approve" data-clear-rank="${row.id}">Clear</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  rowsEl.querySelectorAll("[data-clear-rank]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Clear this member's rank? Only do this once you've confirmed it's been dealt with in-game.")) return;
+      btn.disabled = true;
+      const { error } = await supabaseClient.rpc("admin_clear_expired_rank", {
+        p_user_id: btn.dataset.clearRank,
+      });
+      if (error) {
+        document.getElementById("ranks-error").textContent = error.message;
+        btn.disabled = false;
+        return;
+      }
+      loadExpiredRanks();
+    });
+  });
+
+  prevBtn.disabled = ranksPage <= 1;
+  nextBtn.disabled = ranksPage >= totalPages;
+}
+
+async function loadExpiredRanks() {
+  const { data, error } = await supabaseClient.rpc("admin_list_expired_ranks");
+
+  if (error) {
+    document.getElementById("ranks-error").textContent = error.message;
+    return;
+  }
+
+  allExpiredRanks = data || [];
+  renderRankRows();
+}
+
+// ---------- pending in-game deliveries ----------
+
+let allPendingDeliveries = [];
+let deliveriesPage = 1;
+
+function renderDeliveryRows() {
+  const rowsEl = document.getElementById("delivery-rows");
+  const emptyEl = document.getElementById("deliveries-empty");
+  const prevBtn = document.getElementById("deliveries-prev-page");
+  const nextBtn = document.getElementById("deliveries-next-page");
+
+  if (allPendingDeliveries.length === 0) {
+    rowsEl.innerHTML = "";
+    emptyEl.innerHTML = `<div class="admin-empty">Nothing pending.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(allPendingDeliveries.length / PAGE_SIZE));
+  deliveriesPage = Math.min(deliveriesPage, totalPages);
+  const start = (deliveriesPage - 1) * PAGE_SIZE;
+  const pageItems = allPendingDeliveries.slice(start, start + PAGE_SIZE);
+
+  emptyEl.innerHTML = "";
+  rowsEl.innerHTML = pageItems.map(row => `
+    <tr>
+      <td>${escapeHtml(row.in_game_name)}</td>
+      <td>${row.amount} ${escapeHtml(row.reward_type)}</td>
+      <td>${escapeHtml(row.source)}</td>
+      <td>${formatDate(row.created_at)}</td>
+      <td>
+        <div class="row-actions">
+          <button type="button" class="btn-small btn-approve" data-mark-delivered="${row.id}">Mark delivered</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  rowsEl.querySelectorAll("[data-mark-delivered]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      const { error } = await supabaseClient.rpc("admin_mark_delivery_delivered", {
+        p_delivery_id: btn.dataset.markDelivered,
+      });
+      if (error) {
+        document.getElementById("deliveries-error").textContent = error.message;
+        btn.disabled = false;
+        return;
+      }
+      loadPendingDeliveries();
+    });
+  });
+
+  prevBtn.disabled = deliveriesPage <= 1;
+  nextBtn.disabled = deliveriesPage >= totalPages;
+}
+
+async function loadPendingDeliveries() {
+  const { data, error } = await supabaseClient.rpc("admin_list_pending_deliveries");
+
+  if (error) {
+    document.getElementById("deliveries-error").textContent = error.message;
+    return;
+  }
+
+  allPendingDeliveries = data || [];
+  renderDeliveryRows();
+}
+
 function loadNotifications() {
   loadPendingPayments();
   loadPendingLeaveRequests();
+  loadExpiredRanks();
+  loadPendingDeliveries();
 
   document.getElementById("payments-prev-page").addEventListener("click", () => {
     paymentsPage -= 1;
@@ -253,5 +400,21 @@ function loadNotifications() {
   document.getElementById("leave-next-page").addEventListener("click", () => {
     leavePage += 1;
     renderLeaveRows();
+  });
+  document.getElementById("ranks-prev-page").addEventListener("click", () => {
+    ranksPage -= 1;
+    renderRankRows();
+  });
+  document.getElementById("ranks-next-page").addEventListener("click", () => {
+    ranksPage += 1;
+    renderRankRows();
+  });
+  document.getElementById("deliveries-prev-page").addEventListener("click", () => {
+    deliveriesPage -= 1;
+    renderDeliveryRows();
+  });
+  document.getElementById("deliveries-next-page").addEventListener("click", () => {
+    deliveriesPage += 1;
+    renderDeliveryRows();
   });
 }

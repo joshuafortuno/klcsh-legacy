@@ -1,7 +1,7 @@
 /*
   PAY.JS
   --------------------------------------------------------
-  Four pieces, loaded together in loadPaymentPage():
+  Pieces, loaded together in loadPaymentPage():
 
   - This month's goal: same "sum of expenses, live" idea as the
     homepage, plus a live per-member share (total ÷ active
@@ -9,15 +9,24 @@
     it can shift if more expenses get logged mid-month. That's a
     deliberate choice, not a bug.
 
-  - GCash details: read from site_settings (managed in the
-    admin's Manage Contributions page).
+  - GCash details + shop prices: both read from site_settings
+    (managed in the admin's Manage Contributions page) in one call.
+
+  - Shop selection (rank + Legacy Pass): optional add-ons on top of
+    whatever "What's this for?" target is chosen. The checkout
+    summary is a live, client-side estimate only — the real total
+    is whatever the member actually sends and types into "Amount
+    sent" (same self-report-then-admin-verifies model the site's
+    always used), but the estimate pre-fills that field so most
+    people never have to do the math themselves. Any discount
+    credit gets applied automatically, up to what's available.
 
   - The submit form: uploads the screenshot to the private
     payment-screenshots Storage bucket first (path
     "‹user_id›/‹timestamp›-‹filename›", enforced by the bucket's
-    RLS policies), then calls submit_payment() with that path —
-    that function does the actual encrypted insert, always as
-    'pending' no matter what.
+    RLS policies), then calls submit_payment() with that path plus
+    the rank/battlepass/discount choice — that function does the
+    actual encrypted insert, always as 'pending' no matter what.
 
   - Remaining balance: due − sum of your own approved payments for
     the current period, via the self-view RLS policy that was
@@ -33,6 +42,9 @@
 
 let currentUser = null;
 let currentPeriod = null; // { id, title, expenses, total, duePerMember } or null
+let shopPrices = { vip: 0, mvp: 0, battlepass: 0 };
+let discountBalance = 0;
+let lastAutoFilledAmount = null; // tracks whether the amount field still matches OUR last estimate, so we don't clobber a manual edit
 
 async function loadCurrentPeriod() {
   const { data: period } = await supabaseClient
@@ -117,10 +129,15 @@ function renderSummaryTiles(period, remaining) {
 async function loadGcashSettings() {
   const { data } = await supabaseClient
     .from("site_settings")
-    .select("gcash_name, gcash_number, gcash_qr_url")
+    .select("gcash_name, gcash_number, gcash_qr_url, vip_price, mvp_price, battlepass_price")
     .eq("id", 1)
     .single();
   return data;
+}
+
+async function loadMyDiscountBalance() {
+  const { data } = await supabaseClient.rpc("get_my_profile");
+  return data && data[0] ? Number(data[0].discount_credits) || 0 : 0;
 }
 
 function renderGcashDetails(settings) {
@@ -183,6 +200,89 @@ function renderSideGoalOptions(sideGoals, period) {
   }
 }
 
+function renderShopOptions(settings) {
+  shopPrices = {
+    vip: Number(settings.vip_price) || 0,
+    mvp: Number(settings.mvp_price) || 0,
+    battlepass: Number(settings.battlepass_price) || 0,
+  };
+
+  document.getElementById("vip-option-label").textContent = `VIP — ${money(shopPrices.vip)}/month`;
+  document.getElementById("mvp-option-label").textContent = `MVP — ${money(shopPrices.mvp)}/month`;
+  document.getElementById("battlepass-option-label").textContent =
+    `Legacy Pass — ${money(shopPrices.battlepass)} — 31 days of daily rewards`;
+}
+
+// Live, client-side estimate only — recomputed on every change to
+// the target/rank/battlepass choices. Pre-fills "Amount sent" so
+// most people never have to do the math, but never overwrites a
+// value the member has actually typed themselves (see
+// lastAutoFilledAmount).
+function updateCheckoutSummary() {
+  const summaryEl = document.getElementById("checkout-summary");
+  const amountInput = document.getElementById("payment-amount");
+
+  const checkedTarget = document.querySelector('input[name="payment-target"]:checked');
+  const checkedRank = document.querySelector('input[name="payment-rank"]:checked');
+  const battlepassChecked = document.getElementById("payment-battlepass").checked;
+
+  const rows = [];
+  let subtotal = 0;
+
+  if (checkedTarget && checkedTarget.value === "period" && currentPeriod) {
+    rows.push({ label: "This month's dues (live estimate)", amount: currentPeriod.duePerMember });
+    subtotal += currentPeriod.duePerMember;
+  } else if (checkedTarget && checkedTarget.value.startsWith("sidegoal:")) {
+    rows.push({ label: "Side goal (enter your own amount below)", amount: null });
+  }
+
+  if (checkedRank && checkedRank.value) {
+    const price = shopPrices[checkedRank.value] || 0;
+    rows.push({ label: checkedRank.value.toUpperCase() + " rank", amount: price });
+    subtotal += price;
+  }
+
+  if (battlepassChecked) {
+    rows.push({ label: "Legacy Pass", amount: shopPrices.battlepass });
+    subtotal += shopPrices.battlepass;
+  }
+
+  const discountApplied = Math.min(discountBalance, subtotal);
+  const total = subtotal - discountApplied;
+
+  summaryEl.hidden = rows.length === 0;
+
+  if (rows.length === 0) {
+    summaryEl.innerHTML = "";
+  } else {
+    summaryEl.innerHTML = rows.map(r => `
+      <div class="checkout-summary-row">
+        <span>${escapeHtml(r.label)}</span>
+        <span>${r.amount === null ? "—" : money(r.amount)}</span>
+      </div>
+    `).join("") + (discountApplied > 0 ? `
+      <div class="checkout-summary-row">
+        <span class="discount">Discount credit applied</span>
+        <span class="discount">−${money(discountApplied)}</span>
+      </div>
+    ` : "") + `
+      <div class="checkout-summary-row total">
+        <span>Suggested total</span>
+        <span>${money(total)}</span>
+      </div>
+    `;
+  }
+
+  // Only overwrite the field if it's empty or still matches our own
+  // last suggestion — a member's own typed number is never clobbered.
+  if (amountInput.value === "" || amountInput.value === lastAutoFilledAmount) {
+    amountInput.value = total > 0 ? total.toFixed(2) : "";
+    lastAutoFilledAmount = amountInput.value;
+  }
+
+  return discountApplied;
+}
+
 async function loadRemainingBalance() {
   if (!currentPeriod) {
     renderSummaryTiles(null, 0);
@@ -203,6 +303,16 @@ async function loadRemainingBalance() {
 }
 
 function wireForm() {
+  // Any change to what's being bought re-estimates the total and
+  // (usually) re-fills "Amount sent" — see updateCheckoutSummary().
+  document.querySelectorAll('input[name="payment-target"]').forEach(input => {
+    input.addEventListener("change", updateCheckoutSummary);
+  });
+  document.querySelectorAll('input[name="payment-rank"]').forEach(input => {
+    input.addEventListener("change", updateCheckoutSummary);
+  });
+  document.getElementById("payment-battlepass").addEventListener("change", updateCheckoutSummary);
+
   document.getElementById("payment-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const errorEl = document.getElementById("payment-error");
@@ -211,6 +321,8 @@ function wireForm() {
     successEl.textContent = "";
 
     const checkedTarget = document.querySelector('input[name="payment-target"]:checked');
+    const checkedRank = document.querySelector('input[name="payment-rank"]:checked');
+    const battlepassChecked = document.getElementById("payment-battlepass").checked;
     const amount = parseFloat(document.getElementById("payment-amount").value);
     const ref = document.getElementById("payment-ref").value.trim();
     const file = document.getElementById("payment-screenshot").files[0];
@@ -231,6 +343,10 @@ function wireForm() {
       errorEl.textContent = "Attach a screenshot of the confirmation.";
       return;
     }
+
+    // Recompute right now, not from a possibly-stale render — this
+    // is also what actually gets reserved against the balance.
+    const discountApplied = updateCheckoutSummary();
 
     const submitBtn = document.getElementById("payment-submit-btn");
     submitBtn.disabled = true;
@@ -256,6 +372,9 @@ function wireForm() {
       p_screenshot_path: path,
       p_period_id: null,
       p_side_goal_id: null,
+      p_rank_purchased: checkedRank && checkedRank.value ? checkedRank.value : null,
+      p_battlepass_purchased: battlepassChecked,
+      p_discount_applied: discountApplied,
     };
     if (checkedTarget.value === "period") {
       params.p_period_id = currentPeriod.id;
@@ -274,7 +393,10 @@ function wireForm() {
     }
 
     document.getElementById("payment-form").reset();
+    lastAutoFilledAmount = null;
     successEl.textContent = "Submitted! An admin will review it soon.";
+    discountBalance -= discountApplied;
+    updateCheckoutSummary();
     loadRemainingBalance();
   });
 }
@@ -282,18 +404,22 @@ function wireForm() {
 async function loadPaymentPage(user) {
   currentUser = user;
 
-  const [period, sideGoals, settings] = await Promise.all([
+  const [period, sideGoals, settings, balance] = await Promise.all([
     loadCurrentPeriod(),
     loadActiveSideGoals(),
     loadGcashSettings(),
+    loadMyDiscountBalance(),
   ]);
 
   currentPeriod = period;
+  discountBalance = balance;
 
   renderPeriodCard(period);
   renderGcashDetails(settings);
+  renderShopOptions(settings);
   renderSideGoalOptions(sideGoals, period);
   wireForm();
+  updateCheckoutSummary();
 
   await loadRemainingBalance();
 }

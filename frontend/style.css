@@ -38,7 +38,16 @@ html { scroll-behavior: smooth; }
 
 html, body { overflow-x: hidden; }
 
+/* Sticky footer: body is a full-height flex column and <main> (see
+   its rule further down) grows to fill whatever space the page's
+   own content doesn't need, so .site-footer always sits flush
+   against the bottom of the viewport on short pages (login,
+   register, etc.) instead of floating wherever the content happens
+   to end, while still being pushed down normally on tall pages. */
 body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   background-image:
     radial-gradient(ellipse at top, rgba(106, 156, 70, 0.08), transparent 60%);
@@ -62,6 +71,50 @@ button { font-family: inherit; cursor: pointer; }
 a:focus-visible, button:focus-visible, input:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+/* =========================================================
+   PAGE AMBIENT BACKGROUND (logged-in home page)
+   A fixed layer behind everything — negative z-index on a
+   position:fixed element paints behind body's normal in-flow
+   content regardless of where in the DOM it sits, so it never has
+   to fight header/main/footer for stacking order the way an
+   absolutely-positioned layer nested in the page flow would.
+   Reuses the hero's .floaty drift (below) spread thinner across
+   the whole viewport, plus one slow "breathing" glow. Purely
+   decorative — aria-hidden, switched off under reduced-motion.
+   ========================================================= */
+.page-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.page-floaty-1 { width: 16px; height: 16px; top: 12%; left: 6%; animation-delay: 0s; }
+.page-floaty-2 { width: 12px; height: 12px; top: 38%; right: 8%; animation-delay: 2s; background: linear-gradient(160deg, var(--gold), var(--gold-dark)); }
+.page-floaty-3 { width: 20px; height: 20px; top: 62%; left: 9%; animation-delay: 4s; }
+.page-floaty-4 { width: 14px; height: 14px; top: 82%; right: 12%; animation-delay: 1.2s; background: linear-gradient(160deg, var(--gold), var(--gold-dark)); }
+.page-floaty-5 { width: 18px; height: 18px; top: 25%; left: 48%; animation-delay: 3.3s; opacity: 0.18; }
+
+.page-glow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  width: 900px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(111, 217, 74, 0.05), transparent 70%);
+  animation: glow-breathe 8s ease-in-out infinite;
+}
+
+/* Shared by .page-glow above and .auth-glow in auth.css — one
+   definition so the two "breathing" glows (home page + login/
+   register) can never drift out of sync in how they ease. */
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
 }
 
 /* =========================================================
@@ -462,6 +515,51 @@ h1 {
 
 .goal-meta .highlight { color: var(--emerald); font-weight: 500; }
 
+/* A slow, rotating "chasing light" ring around the spotlight goal
+   card — the page's signature element, so it's the one thing that
+   gets this treatment rather than every card on the page. Classic
+   technique: a wrapper with a few px of padding + overflow:hidden
+   forms the ring gap, and an oversized conic-gradient pseudo-
+   element rotates behind the (opaque) card, clipped down to just
+   that gap. Animates a transform instead of the gradient's own
+   angle, so it doesn't need @property / has wider browser support. */
+.goal-card-glow {
+  position: relative;
+  border-radius: calc(var(--radius) + 3px);
+  padding: 3px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.goal-card-glow::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 78%,
+    var(--emerald) 88%,
+    var(--gold) 92%,
+    var(--emerald) 96%,
+    transparent 100%
+  );
+  animation: goal-glow-spin 5s linear infinite;
+  z-index: 0;
+}
+
+.goal-card-glow .goal-card {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes goal-glow-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* =========================================================
    STATS STRIP
    Sits right under the hero, styled thin and muted — the same
@@ -668,6 +766,22 @@ h1 {
   flex-shrink: 0;
 }
 
+/* Used only by rows that also show a purchase breakdown (what a
+   contribution was actually for) — .ledger-row stays a plain single
+   line everywhere else (expense lists, legacy-only ledger entries).
+   .ledger-row-main reuses the exact layout .ledger-row normally has;
+   the modifier just stacks that plus a second line of tags. */
+.ledger-row--stacked { flex-direction: column; align-items: stretch; gap: 8px; }
+
+.ledger-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ledger-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
 .ledger-date { color: var(--text-faint); }
 .ledger-amount { color: var(--emerald); font-weight: 500; }
 
@@ -721,6 +835,36 @@ h1 {
   color: var(--text-faint);
 }
 
+/* live checkout estimate on the payment page — rank/Legacy Pass
+   add-ons plus any discount credit, on top of whatever "What's this
+   for?" target is chosen */
+.checkout-summary {
+  margin: 16px 0;
+  padding: 14px 16px;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+}
+
+.checkout-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  color: var(--text-dim);
+}
+
+.checkout-summary-row .discount { color: var(--emerald); }
+
+.checkout-summary-row.total {
+  border-top: 1px solid var(--panel-border);
+  margin-top: 6px;
+  padding-top: 10px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .gcash-qr {
   max-width: 220px;
   border-radius: 8px;
@@ -768,6 +912,14 @@ h1 {
 .status-badge--inactive { background: rgba(162, 173, 147, 0.15); color: var(--text-dim); }
 .status-badge--member { background: var(--panel-raised); color: var(--text-dim); }
 .status-badge--admin { background: rgba(232, 195, 74, 0.15); color: var(--gold); }
+/* Rank badges REPLACE the member/admin role badge in the display
+   when a rank is active — the person is still a `member` underneath,
+   this is purely a display override (see contributors.js). Distinct
+   colors so a rank + Battlepass badge shown side by side never look
+   like the same kind of thing. */
+.status-badge--vip { background: rgba(53, 181, 106, 0.15); color: var(--emerald); }
+.status-badge--mvp { background: rgba(232, 195, 74, 0.15); color: var(--gold); }
+.status-badge--battlepass { background: rgba(138, 95, 214, 0.15); color: #8a5fd6; }
 
 /* compact secondary buttons */
 .btn-small {
@@ -864,7 +1016,7 @@ h1 {
 /* =========================================================
    FOOTER
    ========================================================= */
-.site-footer { padding: 32px 0 48px; }
+.site-footer { padding: 32px 0 48px; flex-shrink: 0; }
 
 .footer-inner {
   display: flex;
@@ -982,6 +1134,148 @@ h1 {
 .founder-role {
   font-size: 0.8rem;
   color: var(--text-faint);
+}
+
+/* =========================================================
+   SHOP PAGE
+   ========================================================= */
+/* top/bottom-only — see .page-intro's neighboring pattern; this
+   section also carries .wrap's class for its horizontal padding,
+   and a shorthand here would silently zero that out (same bug as
+   .stats-strip below once had). */
+.shop-section { padding-top: 8px; padding-bottom: 72px; }
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.shop-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.shop-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin-bottom: 8px;
+}
+
+.shop-price {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.shop-description {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  white-space: pre-line;
+}
+
+.shop-card--wide { margin-bottom: 28px; }
+.shop-card--wide .see-all { display: inline-block; margin-top: 12px; }
+
+.shop-cta { text-align: center; }
+
+/* =========================================================
+   BATTLEPASS PAGE
+   ========================================================= */
+/* top/bottom-only, same reasoning as .shop-section above. */
+.battlepass-section { padding-top: 8px; padding-bottom: 72px; }
+
+/* A banner above the (still-visible) reward track, not a
+   replacement for it — rewards stay visible either way, this just
+   explains why they're all locked and links to where to fix that. */
+.battlepass-no-pass {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.battlepass-no-pass p { color: var(--text-dim); flex: 1; min-width: 220px; }
+
+.battlepass-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.battlepass-day {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 12px 8px;
+  text-align: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.battlepass-day-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.battlepass-day-number {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.battlepass-day-reward { font-size: 0.82rem; margin-bottom: 8px; min-height: 2.2em; }
+.battlepass-day-state { font-size: 0.75rem; color: var(--text-faint); }
+
+/* Locked days read as "not there yet" — dimmed and desaturated,
+   same instinct as a grayed-out achievement icon. */
+.battlepass-day--locked { opacity: 0.5; }
+.battlepass-day--locked .battlepass-day-icon { filter: grayscale(1); }
+
+.battlepass-day--claimed { opacity: 0.65; }
+
+/* Claimable days get a gentle breathing glow so the one thing you
+   can actually do stands out from the 30 that just sit there — plus
+   the same hover-lift used for browsable cards elsewhere on the
+   site (see the .feature-card group's comment), since these are
+   genuinely clickable, unlike locked/claimed ones. */
+.battlepass-day--claimable {
+  border-color: var(--gold-dark);
+  animation: battlepass-claimable-glow 2.2s ease-in-out infinite;
+}
+
+.battlepass-day--claimable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+@keyframes battlepass-claimable-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 195, 74, 0.28); }
+  50% { box-shadow: 0 0 0 6px rgba(232, 195, 74, 0); }
+}
+
+/* One-shot celebration the instant a claim succeeds — added by
+   battlepass.js right before it reloads the grid into its settled
+   "claimed" state, so the reward doesn't just silently change. */
+.battlepass-day--just-claimed {
+  animation: battlepass-claim-pulse 0.45s ease;
+}
+
+@keyframes battlepass-claim-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(111, 217, 74, 0.55); }
+  40% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(111, 217, 74, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(111, 217, 74, 0); }
 }
 
 /* =========================================================
@@ -1156,6 +1450,7 @@ h1 {
 }
 
 main {
+  flex: 1 0 auto;
   transition: transform 0.32s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.32s ease;
 }
 
@@ -1189,10 +1484,15 @@ html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
   .addon-grid { grid-template-columns: 1fr; }
   .founder-grid { grid-template-columns: 1fr; }
   .contributor-list { grid-template-columns: 1fr; }
+  .shop-grid { grid-template-columns: 1fr; }
   .ledger-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .ledger-right { align-self: flex-end; }
+  .ledger-row-main { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .ledger-row-main .ledger-right { align-self: flex-end; }
   .install-panel { flex-direction: column; align-items: stretch; }
   .install-panel .btn-gold { width: 100%; text-align: center; }
+  .battlepass-no-pass { flex-direction: column; align-items: stretch; }
+  .battlepass-no-pass .btn-gold { width: 100%; text-align: center; }
 
   /* Shrinks rather than wraps — see .goal-meta's own comment above
      for why the text needs help fitting on one line at this width. */
@@ -1263,4 +1563,6 @@ html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
   html { scroll-behavior: auto; }
   .btn-gold { transition: none; }
   .floaty { animation: none; }
+  .page-glow, .auth-glow { animation: none; }
+  .goal-card-glow::before { animation: none; opacity: 0; }
 }

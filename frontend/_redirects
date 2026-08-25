@@ -13,6 +13,8 @@
 /settings             /user/settings.html                       200
 /my-contributions      /user/my-contributions.html                200
 /updates               /updates.html                             200
+/shop                  /shop.html                                200
+/battlepass            /battlepass.html                          200
 /pay                   /payment/pay.html                          200
 /admin/dashboard          /admin/dashboard.html                       200
 /admin/contributions      /admin/contributions.html                   200

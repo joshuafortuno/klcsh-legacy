@@ -25,6 +25,13 @@
   </header>
 
   <main class="auth-main">
+    <div class="auth-glow" aria-hidden="true"></div>
+    <span class="floaty auth-floaty-1" aria-hidden="true"></span>
+    <span class="floaty auth-floaty-2" aria-hidden="true"></span>
+    <span class="floaty auth-floaty-3" aria-hidden="true"></span>
+    <span class="floaty auth-floaty-4" aria-hidden="true"></span>
+    <span class="floaty auth-floaty-5" aria-hidden="true"></span>
+    <span class="floaty auth-floaty-6" aria-hidden="true"></span>
     <div class="wrap auth-wrap">
       <div class="auth-card" data-reveal>
         <h1>Create your account</h1>
@@ -36,7 +43,7 @@
 
           <label for="password">Password</label>
           <input type="password" id="password" required minlength="8" autocomplete="new-password" />
-          <p class="field-hint">At least 8 characters.</p>
+          <ul class="password-checklist" id="password-checklist"></ul>
 
           <label for="in-game-name">Minecraft in-game name</label>
           <input type="text" id="in-game-name" required autocomplete="off" />

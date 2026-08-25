@@ -372,7 +372,10 @@ h1 {
   50% { transform: translateY(-14px); }
 }
 
-.page-intro { padding: 56px 0 8px; }
+/* top/bottom-only — see .stats-strip's comment above for why this
+   can't be a "56px 0 8px" shorthand when the element also carries
+   .wrap's class */
+.page-intro { padding-top: 56px; padding-bottom: 8px; }
 
 /* =========================================================
    ABOUT THE GOAL (voxel bar lives here — signature element)
@@ -386,7 +389,9 @@ h1 {
   grid-template-columns: 1fr 1fr;
   gap: 48px;
   align-items: center;
-  padding: 24px 0 72px;
+  /* top/bottom-only — see .stats-strip's comment above */
+  padding-top: 24px;
+  padding-bottom: 72px;
 }
 
 .about-goal-text .hero-sub { margin-bottom: 20px; }
@@ -458,7 +463,13 @@ h1 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  padding: 28px 0;
+  /* top/bottom-only, deliberately NOT shorthand "padding: 28px 0" —
+     this section also carries .wrap's class for its horizontal
+     padding, and a shorthand here would silently zero that out
+     (equal specificity, same property, later rule wins entirely).
+     See the other section classes below for the same fix. */
+  padding-top: 28px;
+  padding-bottom: 28px;
   border-top: 1px solid var(--panel-border);
   border-bottom: 1px solid var(--panel-border);
   margin-bottom: 64px;
@@ -876,7 +887,8 @@ h1 {
 /* =========================================================
    ABOUT PAGE
    ========================================================= */
-.about-section { padding: 8px 0 56px; }
+/* top/bottom-only — see .stats-strip's comment above */
+.about-section { padding-top: 8px; padding-bottom: 56px; }
 
 .about-section h2 {
   font-family: var(--font-display);
@@ -967,7 +979,8 @@ h1 {
 /* =========================================================
    CONTRIBUTORS PAGE
    ========================================================= */
-.contributors-section { padding: 8px 0 72px; }
+/* top/bottom-only — see .stats-strip's comment above */
+.contributors-section { padding-top: 8px; padding-bottom: 72px; }
 
 .contributor-list {
   display: grid;
@@ -1008,7 +1021,8 @@ h1 {
 /* =========================================================
    UPDATES / INSTALL PAGE
    ========================================================= */
-.updates-section { padding: 8px 0 72px; }
+/* top/bottom-only — see .stats-strip's comment above */
+.updates-section { padding-top: 8px; padding-bottom: 72px; }
 
 .install-panel {
   display: flex;

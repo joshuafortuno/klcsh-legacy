@@ -3,7 +3,11 @@
    Loaded alongside /style.css on every page in frontend/admin/.
    ========================================================= */
 
-.admin-main { padding: 40px 0 80px; }
+/* top/bottom-only, not shorthand — this element also carries
+   .wrap's class for its horizontal padding, and a "40px 0 80px"
+   shorthand here would silently zero that out (equal specificity,
+   same property, later rule wins entirely). */
+.admin-main { padding-top: 40px; padding-bottom: 80px; }
 
 .admin-intro { margin-bottom: 32px; }
 .admin-intro h1 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 6px; }

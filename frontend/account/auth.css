@@ -3,8 +3,12 @@
 .auth-wrap { display: flex; justify-content: center; }
 
 /* narrower centered column for stacked cards that aren't a
-   side-by-side row — used by the payment page */
-.narrow-wrap { max-width: 640px; margin: 0 auto; }
+   side-by-side row — used by the payment page. Doesn't carry
+   .wrap's class (its max-width is narrower than .wrap's), so it
+   needs its own matching horizontal padding — without this, pages
+   using .narrow-wrap had NO horizontal margin at all on mobile,
+   unlike every other page which gets .wrap's padding: 0 24px. */
+.narrow-wrap { max-width: 640px; margin: 0 auto; padding: 0 24px; }
 
 .narrow-wrap .auth-card { max-width: none; margin-bottom: 20px; }
 .narrow-wrap .auth-card:last-child { margin-bottom: 0; }

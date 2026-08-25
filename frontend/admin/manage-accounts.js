@@ -47,9 +47,9 @@ function renderRows() {
   emptyEl.innerHTML = "";
   rowsEl.innerHTML = pageItems.map(p => `
     <tr data-user-id="${p.id}">
-      <td>${p.in_game_name}</td>
-      <td>${p.real_name || "—"}</td>
-      <td>${p.discord_username || "—"}</td>
+      <td>${escapeHtml(p.in_game_name)}</td>
+      <td>${escapeHtml(p.real_name) || "—"}</td>
+      <td>${escapeHtml(p.discord_username) || "—"}</td>
       <td>
         <select class="admin-role-select" data-role-for="${p.id}">
           <option value="member" ${p.role === "member" ? "selected" : ""}>Member</option>

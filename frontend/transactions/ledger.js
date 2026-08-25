@@ -1,12 +1,13 @@
 /*
   LEDGER.JS — the full contributions page
   --------------------------------------------------------
-  Reads real history from Supabase's legacy_contributions table
-  (see database/05_legacy_contributions.sql) — the actual record
-  from the spreadsheet this site was adapted from, predating
-  accounts entirely, so there's no per-member RLS filtering here:
-  "legacy contributions are viewable by all logged-in users" is a
-  plain public-read policy, same as periods/expenses.
+  Reads the full public ledger via public_contribution_ledger()
+  (database/09_public_ledger.sql) — a union of the pre-launch
+  legacy_contributions history and every APPROVED live
+  payment_submissions row, so this list actually keeps growing as
+  real payments clear instead of staying frozen at the historical
+  import. money()/formatDate()/escapeHtml() come from /utils.js,
+  loaded before this file.
 
   Fetched once into `allContributions`, then search + pagination
   both work against that in-memory list — this site isn't going
@@ -14,15 +15,6 @@
   paging.
   --------------------------------------------------------
 */
-
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
-
-function formatDate(isoString) {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
 
 function renderLedgerRows(contributions) {
   if (contributions.length === 0) {
@@ -32,7 +24,7 @@ function renderLedgerRows(contributions) {
   return contributions.map(c => `
     <div class="ledger-row">
       <div class="ledger-who">
-        <span class="ledger-name">${c.name}</span>
+        <span class="ledger-name">${escapeHtml(c.name)}</span>
       </div>
       <div class="ledger-right">
         <span class="ledger-date">${formatDate(c.date)}</span>
@@ -70,22 +62,21 @@ function renderFullLedger(filterText = "") {
 }
 
 async function loadLedger() {
-  const { data, error } = await supabaseClient
-    .from("legacy_contributions")
-    .select("contributor_name, amount, contributed_on")
-    .order("contributed_on", { ascending: false });
+  const { data, error } = await supabaseClient.rpc("public_contribution_ledger");
 
   if (error) {
     document.getElementById("ledger-full").innerHTML =
-      `<div class="ledger-empty">Couldn't load contributions: ${error.message}</div>`;
+      `<div class="ledger-empty">Couldn't load contributions: ${escapeHtml(error.message)}</div>`;
     return;
   }
 
-  allContributions = (data || []).map(row => ({
-    name: row.contributor_name,
-    amount: row.amount,
-    date: row.contributed_on,
-  }));
+  allContributions = (data || [])
+    .map(row => ({
+      name: row.contributor_name,
+      amount: row.amount,
+      date: row.contributed_on,
+    }))
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   renderFullLedger();
 

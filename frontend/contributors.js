@@ -49,7 +49,7 @@ function renderContributors() {
     <div class="contributor-card">
       <div class="contributor-avatar">${avatarSvg(c.gender)}</div>
       <div class="contributor-info">
-        <div class="contributor-name">${c.in_game_name}</div>
+        <div class="contributor-name">${escapeHtml(c.in_game_name)}</div>
         <div class="contributor-meta">
           <span class="status-badge status-badge--${c.role}">${c.role}</span>
           <span class="status-badge status-badge--${c.status}">${c.status}</span>

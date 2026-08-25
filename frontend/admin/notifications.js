@@ -23,17 +23,11 @@
 
 const PAGE_SIZE = 10;
 
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
-
-function formatDate(isoString) {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+// money()/formatDate()/escapeHtml() come from /utils.js, loaded
+// before this file.
 
 function targetLabel(row) {
-  if (row.side_goal_title) return row.side_goal_title;
+  if (row.side_goal_title) return escapeHtml(row.side_goal_title);
   if (row.period_month) {
     const d = new Date(row.period_month);
     return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -68,11 +62,11 @@ function renderPaymentRows() {
   emptyEl.innerHTML = "";
   rowsEl.innerHTML = pageItems.map(row => `
     <tr data-submission-id="${row.id}">
-      <td>${row.in_game_name}</td>
+      <td>${escapeHtml(row.in_game_name)}</td>
       <td>${targetLabel(row)}</td>
       <td class="num">${money(row.amount_claimed)}</td>
-      <td class="num">${row.gcash_ref}</td>
-      <td>${row.screenshot_url ? `<button type="button" class="btn-small" data-view-screenshot="${row.screenshot_url}">View</button>` : "—"}</td>
+      <td class="num">${escapeHtml(row.gcash_ref)}</td>
+      <td>${row.screenshot_url ? `<button type="button" class="btn-small" data-view-screenshot="${escapeHtml(row.screenshot_url)}">View</button>` : "—"}</td>
       <td>
         <div class="row-actions">
           <button type="button" class="btn-small btn-approve" data-approve-payment="${row.id}">Approve</button>
@@ -118,11 +112,15 @@ function renderPaymentRows() {
     btn.addEventListener("click", async () => {
       const reason = prompt("Reason for rejecting this payment?");
       if (reason === null) return; // cancelled
+      if (!reason.trim()) {
+        document.getElementById("payments-error").textContent = "Enter a reason so the member knows what to fix.";
+        return;
+      }
 
       btn.disabled = true;
       const { error: rejectError } = await supabaseClient.rpc("admin_reject_payment", {
         p_submission_id: btn.dataset.rejectPayment,
-        p_reason: reason,
+        p_reason: reason.trim(),
       });
       if (rejectError) {
         document.getElementById("payments-error").textContent = rejectError.message;
@@ -176,7 +174,7 @@ function renderLeaveRows() {
   emptyEl.innerHTML = "";
   rowsEl.innerHTML = pageItems.map(row => `
     <tr data-request-id="${row.id}">
-      <td>${row.in_game_name}</td>
+      <td>${escapeHtml(row.in_game_name)}</td>
       <td><span class="status-badge status-badge--${row.requested_status}">${row.requested_status}</span></td>
       <td>${formatDate(row.requested_at)}</td>
       <td>

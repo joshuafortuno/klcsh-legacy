@@ -28,14 +28,8 @@
   --------------------------------------------------------
 */
 
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
-
-function formatDate(isoString) {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+// money()/formatDate()/escapeHtml() come from /utils.js, loaded
+// before this file.
 
 let currentUser = null;
 let currentPeriod = null; // { id, title, expenses, total, duePerMember } or null
@@ -91,7 +85,7 @@ function renderPeriodCard(period) {
     ? `<div class="ledger-empty">No expenses logged yet.</div>`
     : period.expenses.map(e => `
         <div class="ledger-row">
-          <div class="ledger-who"><span class="ledger-name">${e.category}</span></div>
+          <div class="ledger-who"><span class="ledger-name">${escapeHtml(e.category)}</span></div>
           <div class="ledger-right"><span class="ledger-amount">${money(e.amount)}</span></div>
         </div>
       `).join("");
@@ -139,7 +133,7 @@ function renderGcashDetails(settings) {
     return;
   }
 
-  el.innerHTML = `Send to <strong>${settings.gcash_name || "—"}</strong> — <strong>${settings.gcash_number || "—"}</strong>`;
+  el.innerHTML = `Send to <strong>${escapeHtml(settings.gcash_name) || "—"}</strong> — <strong>${escapeHtml(settings.gcash_number) || "—"}</strong>`;
 
   if (settings.gcash_qr_url) {
     qrEl.src = settings.gcash_qr_url;
@@ -172,7 +166,7 @@ function renderSideGoalOptions(sideGoals, period) {
     label.innerHTML = `
       <input type="radio" name="payment-target" value="sidegoal:${g.id}" class="radio-input" />
       <span class="radio-box" aria-hidden="true"></span>
-      ${g.title}
+      ${escapeHtml(g.title)}
     `;
     group.appendChild(label);
   });

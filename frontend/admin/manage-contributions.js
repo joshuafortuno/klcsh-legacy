@@ -46,14 +46,8 @@
 
 const PAGE_SIZE = 10;
 
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
-
-function monthLabel(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-}
+// money()/monthLabel()/escapeHtml() come from /utils.js, loaded
+// before this file.
 
 // ---------- payment settings ----------
 
@@ -244,7 +238,7 @@ function renderExpenses() {
   emptyEl.innerHTML = "";
   rowsEl.innerHTML = pageItems.map(e => `
     <tr>
-      <td>${e.category}</td>
+      <td>${escapeHtml(e.category)}</td>
       <td class="num">${money(e.amount)}</td>
       <td><button type="button" class="btn-small btn-reject" data-expense-id="${e.id}">Remove</button></td>
     </tr>
@@ -316,7 +310,7 @@ async function renderSideGoals() {
 
   rowsEl.innerHTML = pageItems.map((g, i) => `
     <tr>
-      <td>${g.title}</td>
+      <td>${escapeHtml(g.title)}</td>
       <td class="num">${money(progressResults[i].data || 0)} / ${money(g.target)}</td>
       <td><span class="status-badge status-badge--${g.status}">${g.status}</span></td>
       <td>
@@ -391,7 +385,7 @@ function renderPastPeriods() {
   rowsEl.innerHTML = pageItems.map(p => `
     <tr>
       <td>${monthLabel(p.month)}</td>
-      <td>${p.title || "—"}</td>
+      <td>${escapeHtml(p.title) || "—"}</td>
       <td class="num">${money(p.total_expenses)}</td>
       <td class="num">${money(p.amount_due_per_member)}</td>
       <td class="num">${money(p.surplus_carried_out)}</td>

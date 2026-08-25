@@ -181,18 +181,6 @@ function avatarSvg(gender) {
 }
 
 /*
-  Turns a notification row into what the bell dropdown shows. The
-  message column already has the full sentence baked in (built
-  server-side when the notification was created), so this is just
-  a short date underneath it.
-*/
-function formatNotificationDate(isoString) {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
-    " · " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
-/*
   Populates the header's account slot once we know who's logged
   in: a notification bell (unread count badge, dropdown, live
   updates via Realtime) and an avatar button that toggles its own
@@ -314,8 +302,8 @@ function wireNotificationBell(user) {
       ? `<div class="notification-empty">Nothing yet.</div>`
       : notifications.map(n => `
           <button type="button" class="notification-item ${n.read ? "" : "notification-item--unread"}" data-notif-id="${n.id}">
-            <span class="notification-message">${n.message}</span>
-            <span class="notification-time">${formatNotificationDate(n.created_at)}</span>
+            <span class="notification-message">${escapeHtml(n.message)}</span>
+            <span class="notification-time">${formatDateTime(n.created_at)}</span>
           </button>
         `).join("");
 

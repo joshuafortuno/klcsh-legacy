@@ -4,16 +4,13 @@
   Everything here reads from real Supabase tables now — goals
   from periods/expenses/side_goals (edited in the admin's Manage
   Contributions page), and the stats row's totals from
-  legacy_contributions (the real historical record — see
-  database/05_legacy_contributions.sql). data.js is gone; there's
-  no fake data left to stand in for.
+  public_contribution_ledger() (database/09_public_ledger.sql),
+  which unions the pre-launch legacy_contributions history with
+  every approved live payment_submissions row — money(), escapeHtml()
+  etc. come from /utils.js, loaded before this file. data.js is
+  gone; there's no fake data left to stand in for.
   --------------------------------------------------------
 */
-
-// Small helper: turns 340 into "₱340"
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
 
 // "2026-09-01" -> "September 25, 2026". Periods don't store an
 // explicit due date, so this derives one from the site's
@@ -90,7 +87,7 @@ function renderSpotlightGoal(period) {
 
   el.innerHTML = `
     <div class="goal-card-top">
-      <h3>${period.title}</h3>
+      <h3>${escapeHtml(period.title)}</h3>
       <div class="goal-amounts"><strong>${money(period.current)}</strong> of ${money(period.target)}</div>
     </div>
     <div class="voxel-bar">${renderVoxelBar(period.current, period.target)}</div>
@@ -101,14 +98,12 @@ function renderSpotlightGoal(period) {
   `;
 }
 
-// Sums legacy_contributions for the stats row — plain client-side
-// aggregation since this is public data anyway (same RLS policy
-// as periods/expenses), and the row count here will never be
-// large enough to need a database-side aggregate function.
-async function loadLegacyStats() {
-  const { data } = await supabaseClient
-    .from("legacy_contributions")
-    .select("contributor_name, amount");
+// Sums the full public ledger (pre-launch history + every approved
+// live payment) for the stats row — plain client-side aggregation
+// since this is public data anyway, and the row count here will
+// never be large enough to need a database-side aggregate.
+async function loadContributionStats() {
+  const { data } = await supabaseClient.rpc("public_contribution_ledger");
 
   const rows = data || [];
   return {
@@ -117,11 +112,11 @@ async function loadLegacyStats() {
   };
 }
 
-function renderStats(period, legacyStats) {
+function renderStats(period, stats) {
   const el = document.getElementById("stats-row");
 
-  const totalRaised = legacyStats ? legacyStats.totalRaised : 0;
-  const contributorCount = legacyStats ? legacyStats.contributorCount : 0;
+  const totalRaised = stats ? stats.totalRaised : 0;
+  const contributorCount = stats ? stats.contributorCount : 0;
 
   el.innerHTML = `
     <div class="stat">
@@ -190,7 +185,7 @@ async function renderGoalGrid() {
     const pct = g.target > 0 ? Math.round((current / g.target) * 100) : 0;
     return `
       <div class="goal-mini">
-        <h4>${g.title}</h4>
+        <h4>${escapeHtml(g.title)}</h4>
         <div class="mini-bar">
           <div class="mini-bar-fill" style="width: ${pct}%"></div>
         </div>
@@ -205,12 +200,12 @@ async function renderGoalGrid() {
 
 // Run everything once the page loads
 (async () => {
-  const [period, legacyStats] = await Promise.all([
+  const [period, stats] = await Promise.all([
     loadCurrentPeriod(),
-    loadLegacyStats(),
+    loadContributionStats(),
   ]);
   renderSpotlightGoal(period);
-  renderStats(period, legacyStats);
+  renderStats(period, stats);
 })();
 renderShoutoutCards();
 renderGoalGrid();

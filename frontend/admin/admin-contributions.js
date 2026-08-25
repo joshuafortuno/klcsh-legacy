@@ -29,17 +29,11 @@
 
 const PAGE_SIZE = 10;
 
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
-
-function formatDate(isoString) {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+// money()/formatDate()/escapeHtml() come from /utils.js, loaded
+// before this file.
 
 function targetLabel(row) {
-  if (row.side_goal_title) return row.side_goal_title;
+  if (row.side_goal_title) return escapeHtml(row.side_goal_title);
   if (row.period_month) {
     const d = new Date(row.period_month);
     return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -81,7 +75,7 @@ function renderRows() {
   emptyEl.innerHTML = "";
   rowsEl.innerHTML = pageItems.map(row => `
     <tr>
-      <td>${row.in_game_name}</td>
+      <td>${escapeHtml(row.in_game_name)}</td>
       <td>${targetLabel(row)}</td>
       <td class="num">${money(row.amount_claimed)}</td>
       <td><span class="status-badge status-badge--${row.status}">${row.status}</span></td>
@@ -98,7 +92,7 @@ async function loadContributions() {
 
   if (error) {
     document.getElementById("contributions-empty").innerHTML =
-      `<div class="admin-empty">Couldn't load submissions: ${error.message}</div>`;
+      `<div class="admin-empty">Couldn't load submissions: ${escapeHtml(error.message)}</div>`;
     return;
   }
 
@@ -124,10 +118,6 @@ async function loadContributions() {
 }
 
 // ---------- historical (legacy_contributions) ----------
-
-function escapeAttr(s) {
-  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-}
 
 let allLegacy = [];
 let editingLegacyId = null; // id of the row currently in edit mode, if any
@@ -163,7 +153,7 @@ function renderLegacyRows() {
     if (row.id === editingLegacyId) {
       return `
         <tr>
-          <td><input type="text" class="legacy-edit-name" value="${escapeAttr(row.contributor_name)}" /></td>
+          <td><input type="text" class="legacy-edit-name" value="${escapeHtml(row.contributor_name)}" /></td>
           <td><input type="number" class="legacy-edit-amount" min="0" step="0.01" value="${row.amount}" /></td>
           <td><input type="date" class="legacy-edit-date" value="${row.contributed_on}" /></td>
           <td>
@@ -177,7 +167,7 @@ function renderLegacyRows() {
     }
     return `
       <tr>
-        <td>${row.contributor_name}</td>
+        <td>${escapeHtml(row.contributor_name)}</td>
         <td class="num">${money(row.amount)}</td>
         <td>${formatDate(row.contributed_on)}</td>
         <td>
@@ -263,7 +253,7 @@ async function loadLegacyContributions() {
 
   if (error) {
     document.getElementById("legacy-empty").innerHTML =
-      `<div class="admin-empty">Couldn't load historical contributions: ${error.message}</div>`;
+      `<div class="admin-empty">Couldn't load historical contributions: ${escapeHtml(error.message)}</div>`;
     return;
   }
 

@@ -6,35 +6,30 @@
   been collected, active member count, pending-item counts (via
   the cheap admin_pending_counts() function, no decryption
   needed just to show a badge), and a recent-activity feed from
-  status_audit_log.
+  status_audit_log. money()/formatDateTime()/escapeHtml() come
+  from /utils.js, loaded before this file.
   --------------------------------------------------------
 */
 
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
-
-function formatDateTime(isoString) {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
-    " · " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
+// details.reason (a payment rejection reason) and details.month are
+// free text an admin typed elsewhere — escaped before they land in
+// this page's innerHTML, same as every other admin-authored or
+// member-authored string on the site.
 function describeActivity(entry) {
   const details = entry.details || {};
   switch (entry.action) {
     case "status_change":
-      return `Status changed ${details.from ? `from ${details.from} ` : ""}to ${details.to}${details.reason ? ` (${details.reason.replace(/_/g, " ")})` : ""}`;
+      return `Status changed ${details.from ? `from ${escapeHtml(details.from)} ` : ""}to ${escapeHtml(details.to)}${details.reason ? ` (${escapeHtml(details.reason.replace(/_/g, " "))})` : ""}`;
     case "role_change":
-      return `Role changed from ${details.from} to ${details.to}`;
+      return `Role changed from ${escapeHtml(details.from)} to ${escapeHtml(details.to)}`;
     case "payment_approved":
       return "A payment submission was approved";
     case "payment_rejected":
-      return `A payment submission was rejected${details.reason ? `: "${details.reason}"` : ""}`;
+      return `A payment submission was rejected${details.reason ? `: "${escapeHtml(details.reason)}"` : ""}`;
     case "period_finalized":
-      return `Period ${details.month || ""} finalized — ${money(details.total_expenses || 0)} in expenses, surplus ${money(details.surplus || 0)}`;
+      return `Period ${escapeHtml(details.month || "")} finalized — ${money(details.total_expenses || 0)} in expenses, surplus ${money(details.surplus || 0)}`;
     default:
-      return entry.action.replace(/_/g, " ");
+      return escapeHtml(entry.action.replace(/_/g, " "));
   }
 }
 
@@ -74,7 +69,7 @@ async function loadDashboard() {
   statsEl.innerHTML = `
     <div class="admin-stat">
       <div class="admin-stat-value">${money(raised)}</div>
-      <div class="admin-stat-label">Raised — ${period ? period.title || "This month" : "This month"}</div>
+      <div class="admin-stat-label">Raised — ${period ? escapeHtml(period.title) || "This month" : "This month"}</div>
     </div>
     <div class="admin-stat">
       <div class="admin-stat-value">${money(goalTotal)}</div>

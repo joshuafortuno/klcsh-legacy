@@ -79,7 +79,7 @@ form.addEventListener("submit", async (e) => {
   document.querySelector(".auth-card").innerHTML = `
     <h1>Check your email</h1>
     <p class="auth-sub">
-      We sent a confirmation link to <strong>${email}</strong>.
+      We sent a confirmation link to <strong>${escapeHtml(email)}</strong>.
       Click it, then come back and log in.
     </p>
     <a href="/login" class="btn-gold" style="display:block; text-align:center; text-decoration:none;">Go to login</a>

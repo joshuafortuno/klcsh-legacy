@@ -19,17 +19,11 @@
 
 const PAGE_SIZE = 10;
 
-function money(n) {
-  return `₱${Number(n).toLocaleString()}`;
-}
-
-function formatDate(isoString) {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+// money()/formatDate()/escapeHtml() come from /utils.js, loaded
+// before this file.
 
 function targetLabel(row) {
-  if (row.side_goals) return row.side_goals.title;
+  if (row.side_goals) return escapeHtml(row.side_goals.title);
   if (row.periods) {
     return new Date(row.periods.month).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   }
@@ -70,7 +64,7 @@ function renderMyContributions() {
       <div class="ledger-who">
         <span class="ledger-name">${targetLabel(row)}</span>
         <span class="status-badge status-badge--${row.status}">${row.status}</span>
-        ${row.rejection_reason ? `<span class="ledger-msg">"${row.rejection_reason}"</span>` : ""}
+        ${row.rejection_reason ? `<span class="ledger-msg">"${escapeHtml(row.rejection_reason)}"</span>` : ""}
       </div>
       <div class="ledger-right">
         <span class="ledger-date">${formatDate(row.submitted_at)}</span>

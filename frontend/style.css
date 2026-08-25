@@ -448,9 +448,17 @@ h1 {
 .goal-meta {
   display: flex;
   justify-content: space-between;
+  gap: 8px;
   font-size: 0.85rem;
   color: var(--text-faint);
 }
+
+/* Flex items shrink by default, and without this the "funded" /
+   "Needed by ..." text wraps mid-phrase once its span gets
+   squeezed on a narrow screen — nowrap keeps each piece on its
+   own single line; the 640px breakpoint below shrinks the font
+   instead, so it still fits rather than overflowing. */
+.goal-meta span { white-space: nowrap; }
 
 .goal-meta .highlight { color: var(--emerald); font-weight: 500; }
 
@@ -1181,11 +1189,15 @@ html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
   .addon-grid { grid-template-columns: 1fr; }
   .founder-grid { grid-template-columns: 1fr; }
   .contributor-list { grid-template-columns: 1fr; }
-  .voxel-bar { grid-template-columns: repeat(16, 1fr); }
   .ledger-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .ledger-right { align-self: flex-end; }
   .install-panel { flex-direction: column; align-items: stretch; }
   .install-panel .btn-gold { width: 100%; text-align: center; }
+
+  /* Shrinks rather than wraps — see .goal-meta's own comment above
+     for why the text needs help fitting on one line at this width. */
+  .goal-meta { font-size: 0.76rem; }
+  .goal-mini .goal-meta { font-size: 0.72rem; }
 
   /* Collapse the horizontal nav into a hamburger-triggered dropdown
      — there's no room left for four text links plus the logo and

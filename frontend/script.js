@@ -12,16 +12,18 @@
   --------------------------------------------------------
 */
 
-// "2026-09-01" -> "September 25, 2026". Periods don't store an
-// explicit due date, so this derives one from the site's
-// established monthly due date (the 25th — same day contribution
-// records use). Built from year/month numbers rather than
-// `new Date(monthStr)` + setDate() to avoid UTC-parse/local-
-// timezone date-shifting bugs.
+// "2026-09-01" -> "Sep 25, 2026". Periods don't store an explicit
+// due date, so this derives one from the site's established
+// monthly due date (the 25th — same day contribution records use).
+// Built from year/month numbers rather than `new Date(monthStr)` +
+// setDate() to avoid UTC-parse/local-timezone date-shifting bugs.
+// Short month name on purpose — "Needed by September 25, 2026"
+// next to "0% funded" doesn't fit in .goal-meta's row on a phone
+// screen even with white-space:nowrap; the shorter form does.
 function formatDeadline(monthDateStr) {
   const [year, month] = monthDateStr.split("-");
   const d = new Date(Number(year), Number(month) - 1, 25);
-  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 // Fetches the currently open period plus its computed goal total

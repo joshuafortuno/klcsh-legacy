@@ -36,6 +36,8 @@
 
 html { scroll-behavior: smooth; }
 
+html, body { overflow-x: hidden; }
+
 body {
   background: var(--bg);
   background-image:
@@ -89,7 +91,17 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: 0.01em;
+  /* Allowed to shrink (it's the least important thing in the header
+     row) and truncates with an ellipsis instead of wrapping to a
+     second line if it doesn't fit — min-width:0 is what lets a flex
+     child shrink below its own text's natural width at all. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
+
+.logo-cube { flex-shrink: 0; }
 
 /* a tiny css-drawn cube, no image asset needed */
 .logo-cube {
@@ -122,6 +134,31 @@ a:focus-visible, button:focus-visible, input:focus-visible {
      (added by nav-transitions.js) draws the line instead, so it
      can animate smoothly between links rather than jumping */
 }
+
+/* Groups the account icons + mobile hamburger together so
+   .header-inner's 3-way space-between (logo / nav / this) holds up
+   whether .main-nav is a horizontal row (desktop) or hidden behind
+   the toggle (mobile — see the 640px breakpoint below). Never
+   shrinks — the logo gives up space to this group first (see
+   .logo's min-width:0 above), not the other way around, so these
+   buttons never get squeezed into an unusable size. */
+.header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.nav-toggle-btn {
+  display: none; /* shown only under the mobile breakpoint */
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  color: var(--text-dim);
+}
+
+.nav-toggle-btn svg { width: 18px; height: 18px; }
+.nav-toggle-btn:hover { border-color: var(--gold); color: var(--text); }
 
 /* =========================================================
    HEADER ACCOUNT AREA (notification bell + profile menu)
@@ -168,7 +205,12 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .notification-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
+  /* Right-anchored, same as .profile-dropdown — the bell sits well
+     left of the viewport's right edge once the header has three
+     icons in it, so a left-anchored 320px panel could run off the
+     right edge of a narrow phone screen. Growing leftward from the
+     bell instead always stays inside the header's own width. */
+  right: 0;
   width: 320px;
   max-width: 80vw;
   max-height: 400px;
@@ -1130,6 +1172,62 @@ html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
   .ledger-right { align-self: flex-end; }
   .install-panel { flex-direction: column; align-items: stretch; }
   .install-panel .btn-gold { width: 100%; text-align: center; }
+
+  /* Collapse the horizontal nav into a hamburger-triggered dropdown
+     — there's no room left for four text links plus the logo and
+     account icons all on one row once the viewport gets this
+     narrow. */
+  .logo { font-size: 1.02rem; }
+
+  .main-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: var(--panel);
+    border-bottom: 1px solid var(--panel-border);
+    padding: 4px 24px 12px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .main-nav.is-open { display: flex; }
+
+  .main-nav a {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .main-nav a:last-child { border-bottom: none; }
+
+  /* The sliding underline only makes sense for a horizontal row —
+     in the stacked dropdown, fall back to the plain static
+     border-bottom this site used before nav-transitions.js existed. */
+  .nav-indicator { display: none; }
+  .main-nav a.active { border-bottom-color: var(--gold); }
+
+  .nav-toggle-btn { display: flex; }
+
+  /* Both dropdowns normally anchor to the button that opens them
+     (right:0 relative to their own small trigger button), which
+     assumes that button sits at the outer edge of the header. On
+     mobile it doesn't anymore — avatar/hamburger sit to the right
+     of the bell — so a dropdown anchored to the bell specifically
+     can overshoot off the LEFT edge of a narrow phone screen
+     instead. Pinning both to the viewport itself sidesteps which
+     button triggered it entirely — always fits, always fully
+     visible, regardless of where the trigger sits in the header. */
+  .notification-dropdown,
+  .profile-dropdown {
+    position: fixed;
+    top: 70px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+  }
 }
 
 /* reduced motion — deliberately does NOT cover this session's new

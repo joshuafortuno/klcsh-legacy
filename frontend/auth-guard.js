@@ -45,6 +45,48 @@ window.addEventListener("pageshow", (event) => {
   }
 });
 
+/*
+  Mobile nav toggle — a hamburger button (only visible under
+  style.css's 640px breakpoint) that reveals a nav as a dropdown
+  instead of whatever cramped/wrapping row there's no room for on a
+  phone screen. Generic so it can wire up both the site's main nav
+  (called below, unconditionally, same as the pageshow listener
+  above — a no-op on pages without these elements, like admin pages
+  or login/register) and the admin section's own secondary nav
+  (called from admin-guard.js with different element ids).
+*/
+function wireNavToggle(btnId = "nav-toggle-btn", navId = "main-nav") {
+  const btn = document.getElementById(btnId);
+  const nav = document.getElementById(navId);
+  if (!btn || !nav) return;
+
+  function closeNav() {
+    nav.classList.remove("is-open");
+    btn.setAttribute("aria-expanded", "false");
+  }
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = nav.classList.toggle("is-open");
+    btn.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  // Picking a link should close the dropdown too, not leave it
+  // hanging open underneath whatever page loads next.
+  nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeNav));
+
+  document.addEventListener("click", (e) => {
+    if (nav.classList.contains("is-open") && !nav.contains(e.target) && e.target !== btn) {
+      closeNav();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeNav();
+  });
+}
+
+wireNavToggle();
+
 async function requireAuth() {
   const { data: { session } } = await supabaseClient.auth.getSession();
 

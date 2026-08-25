@@ -38,3 +38,9 @@ async function requireAdmin() {
 
   return user;
 }
+
+// Same hamburger-dropdown mechanics as the site's main nav
+// (wireNavToggle lives in auth-guard.js, loaded before this file)
+// — the five admin section tabs get too cramped/wrap onto several
+// lines on a phone screen otherwise.
+wireNavToggle("admin-nav-toggle-btn", "admin-nav");

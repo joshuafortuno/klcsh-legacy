@@ -21,13 +21,22 @@
         <span class="logo-cube" aria-hidden="true"></span>
         KLCSH Legacy
       </a>
-      <nav class="main-nav">
+      <nav class="main-nav" id="main-nav">
         <a href="/">Home</a>
         <a href="/contributions">Contributions</a>
         <a href="/contributors">Contributors</a>
         <a href="/about">About</a>
       </nav>
-      <div class="header-account" id="header-account"></div>
+      <div class="header-right">
+        <div class="header-account" id="header-account"></div>
+        <button type="button" class="nav-toggle-btn" id="nav-toggle-btn" aria-expanded="false" aria-controls="main-nav" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -37,13 +46,23 @@
       <p>Where things stand right now.</p>
     </div>
 
-    <nav class="admin-nav">
+    <div class="admin-nav-bar">
+      <button type="button" class="admin-nav-toggle-btn" id="admin-nav-toggle-btn" aria-expanded="false" aria-controls="admin-nav" aria-label="Admin menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+        Menu
+      </button>
+      <nav class="admin-nav" id="admin-nav">
       <a href="/admin/dashboard" class="active">Dashboard</a>
       <a href="/admin/contributions">Contributions</a>
       <a href="/admin/manage-contributions">Manage Contributions</a>
       <a href="/admin/manage-accounts">Manage Accounts</a>
       <a href="/admin/notifications">Notifications</a>
     </nav>
+    </div>
 
     <div class="admin-stats" id="admin-stats">
       <!-- filled by dashboard.js -->

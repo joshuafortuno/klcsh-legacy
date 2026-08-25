@@ -9,13 +9,33 @@
 .admin-intro h1 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 6px; }
 .admin-intro p { color: var(--text-dim); font-size: 0.92rem; }
 
+/* Wraps the secondary nav + its mobile toggle button so the toggle
+   has something to sit beside (see the 640px breakpoint below). */
+.admin-nav-bar { position: relative; margin-bottom: 32px; }
+
+.admin-nav-toggle-btn {
+  display: none; /* shown only under the mobile breakpoint */
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.admin-nav-toggle-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.admin-nav-toggle-btn:hover { border-color: var(--gold); }
+
 /* secondary nav across the five admin pages */
 .admin-nav {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
   border-bottom: 1px solid var(--panel-border);
-  margin-bottom: 32px;
 }
 
 .admin-nav a {
@@ -177,4 +197,36 @@
 
 @media (max-width: 640px) {
   .admin-table { display: block; overflow-x: auto; }
+
+  /* Five tabs wrapping across two or three lines eats a lot of
+     screen on a phone — collapse them into a toggle-triggered
+     dropdown instead, same pattern as the site's main nav. */
+  .admin-nav-toggle-btn { display: flex; }
+
+  .admin-nav {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 6px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+    z-index: 15;
+  }
+
+  .admin-nav.is-open { display: flex; }
+
+  .admin-nav a {
+    border-bottom: none;
+    border-radius: 4px;
+    padding: 10px 12px;
+  }
+
+  .admin-nav a:hover { background: var(--panel-raised); }
+  .admin-nav a.active { background: rgba(232, 195, 74, 0.1); }
 }

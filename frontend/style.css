@@ -716,31 +716,32 @@ h1 {
   height: 100%;
 }
 
-/* Deliberately no resting border-color override here — the rotating
-   glow ring (.goal-card-glow, wrapping this card) already marks it
-   as the featured tier on its own. A static tinted border on top of
-   that looked like a permanently "active"/highlighted state even
-   with nothing hovered, which is exactly what looked wrong. Hover
-   gets its own reaction instead of relying on a border-color change
-   (the shared .shop-ad-card:hover rule's border-color: gold would've
-   been a no-op here anyway): a warmer glow shadow, plus the
-   surrounding ring spins faster while hovered. transform is reset to
-   none — the shared rule's translateY(-4px) would otherwise lift this
-   card's top edge into the wrapper's overflow:hidden (needed to clip
-   the oversized glow-ring gradient), cutting it off. */
-.shop-ad-card--featured:hover {
+/* This card sits inside .goal-card-glow (the rotating ring wrapper),
+   which needs overflow:hidden to clip its oversized gradient — so
+   anything the card itself moves or casts past that wrapper's edge
+   gets cut off too. Rather than lifting the card on hover like the
+   other two tiers, the lift + shadow move to the wrapper below
+   instead: the whole ring+card moves together, so nothing crosses
+   its own clip edge. transform/box-shadow are cleared here so the
+   shared .shop-ad-card:hover rule's versions don't also apply —
+   .shop-ad-card.shop-ad-card--featured (two classes) outweighs
+   .shop-ad-card's one, so this reliably wins regardless of each
+   rule's position in the file. border-color is left alone; the ring
+   already marks this card as featured, so the shared rule's
+   border-color change is harmless here. */
+.shop-ad-card.shop-ad-card--featured:hover {
   transform: none;
+  box-shadow: none;
 }
 
-/* The glow shadow itself lives on the wrapper, not the card — an
-   element's own box-shadow is never clipped by its own
-   overflow:hidden, but a *descendant's* shadow extending past the
-   wrapper would be (same clipping the ring gradient relies on). Put
-   on the card, this shadow got cut flat at the wrapper's edge. :has()
+/* Same lift + shadow the other two cards get on hover (see the
+   shared .shop-ad-card:hover rule), just applied one level up so it
+   never clips against this wrapper's own overflow:hidden. :has()
    scopes it to just the shop-ad wrapper, not every .goal-card-glow
-   (e.g. the spotlight goal card doesn't get this shadow). */
+   (e.g. the spotlight goal card doesn't get this). */
 .goal-card-glow:has(.shop-ad-card--featured):hover {
-  box-shadow: 0 12px 32px rgba(232, 195, 74, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
 .goal-card-glow:hover::before {

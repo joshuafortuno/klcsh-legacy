@@ -64,25 +64,43 @@
     </nav>
     </div>
 
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab active" data-tab="payments" role="tab" aria-selected="true">
+        Pending payments <span class="admin-tab-count" id="payments-count">0</span>
+      </button>
+      <button type="button" class="admin-tab" data-tab="leave" role="tab" aria-selected="false">
+        Pending status requests <span class="admin-tab-count" id="leave-count">0</span>
+      </button>
+      <button type="button" class="admin-tab" data-tab="ranks" role="tab" aria-selected="false">
+        Expired ranks <span class="admin-tab-count" id="ranks-count">0</span>
+      </button>
+      <button type="button" class="admin-tab" data-tab="deliveries" role="tab" aria-selected="false">
+        Pending in-game deliveries <span class="admin-tab-count" id="deliveries-count">0</span>
+      </button>
+    </div>
+
     <!-- ===== PENDING PAYMENTS ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="payments" role="tabpanel">
       <h2>Pending payments</h2>
       <p class="admin-card-sub">Dues and side-goal chip-ins waiting on approval.</p>
       <p class="form-error" id="payments-error" role="alert"></p>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>For</th>
-            <th>Amount</th>
-            <th>GCash ref</th>
-            <th>Proof</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="payment-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>For</th>
+              <th>Purpose</th>
+              <th>Amount</th>
+              <th>GCash ref</th>
+              <th>Proof</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="payment-rows"></tbody>
+        </table>
+      </div>
       <div id="payments-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="payments-prev-page">Previous</button>
@@ -91,22 +109,24 @@
     </div>
 
     <!-- ===== PENDING STATUS REQUESTS ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="leave" role="tabpanel" hidden>
       <h2>Pending status requests</h2>
       <p class="admin-card-sub">Leave, go inactive, or reactivate — approving applies the requested status right away.</p>
       <p class="form-error" id="leave-error" role="alert"></p>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Wants to become</th>
-            <th>Requested</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="leave-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Wants to become</th>
+              <th>Requested</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="leave-rows"></tbody>
+        </table>
+      </div>
       <div id="leave-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="leave-prev-page">Previous</button>
@@ -115,22 +135,24 @@
     </div>
 
     <!-- ===== EXPIRED RANKS ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="ranks" role="tabpanel" hidden>
       <h2>Expired ranks</h2>
       <p class="admin-card-sub">Nothing removes these automatically — clear one once you've confirmed it's been dealt with in-game.</p>
       <p class="form-error" id="ranks-error" role="alert"></p>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Rank</th>
-            <th>Expired</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="rank-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Rank</th>
+              <th>Expired</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rank-rows"></tbody>
+        </table>
+      </div>
       <div id="ranks-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="ranks-prev-page">Previous</button>
@@ -139,23 +161,25 @@
     </div>
 
     <!-- ===== PENDING IN-GAME DELIVERIES ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="deliveries" role="tabpanel" hidden>
       <h2>Pending in-game deliveries</h2>
       <p class="admin-card-sub">Legacy Pass rewards that need to be given in-game — a manual fallback until the addon handles this automatically.</p>
       <p class="form-error" id="deliveries-error" role="alert"></p>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Reward</th>
-            <th>Source</th>
-            <th>Requested</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="delivery-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Reward</th>
+              <th>Source</th>
+              <th>Requested</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="delivery-rows"></tbody>
+        </table>
+      </div>
       <div id="deliveries-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="deliveries-prev-page">Previous</button>
@@ -170,6 +194,7 @@
   <script src="/pwa-register.js"></script>
   <script src="/auth-guard.js"></script>
   <script src="/admin/admin-guard.js"></script>
+  <script src="/admin/admin-tabs.js"></script>
   <script src="/admin/notifications.js"></script>
   <script>
     (async () => {

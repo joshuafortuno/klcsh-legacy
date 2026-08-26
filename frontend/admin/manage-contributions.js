@@ -73,7 +73,7 @@ function renderQrPreview(url) {
 async function loadPaymentSettings() {
   const { data, error } = await supabaseClient
     .from("site_settings")
-    .select("gcash_name, gcash_number, gcash_qr_url, vip_price, mvp_price, battlepass_price, vip_description, mvp_description, battlepass_description")
+    .select("gcash_name, gcash_number, gcash_qr_url, vip_price, mvp_price, battlepass_price")
     .eq("id", 1)
     .single();
 
@@ -89,10 +89,6 @@ async function loadPaymentSettings() {
   document.getElementById("vip-price").value = data.vip_price;
   document.getElementById("mvp-price").value = data.mvp_price;
   document.getElementById("battlepass-price").value = data.battlepass_price;
-
-  document.getElementById("vip-description").value = data.vip_description || "";
-  document.getElementById("mvp-description").value = data.mvp_description || "";
-  document.getElementById("battlepass-description").value = data.battlepass_description || "";
 
   document.getElementById("save-settings-btn").addEventListener("click", async () => {
     const errorEl = document.getElementById("settings-error");
@@ -143,30 +139,6 @@ async function loadPaymentSettings() {
     }
 
     successEl.textContent = "Prices updated.";
-  });
-
-  document.getElementById("save-shop-descriptions-btn").addEventListener("click", async () => {
-    const errorEl = document.getElementById("shop-descriptions-error");
-    const successEl = document.getElementById("shop-descriptions-success");
-    errorEl.textContent = "";
-    successEl.textContent = "";
-
-    const { error: updateError } = await supabaseClient
-      .from("site_settings")
-      .update({
-        vip_description: document.getElementById("vip-description").value.trim() || null,
-        mvp_description: document.getElementById("mvp-description").value.trim() || null,
-        battlepass_description: document.getElementById("battlepass-description").value.trim() || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", 1);
-
-    if (updateError) {
-      errorEl.textContent = updateError.message;
-      return;
-    }
-
-    successEl.textContent = "Descriptions updated.";
   });
 
   // Uploading a file replaces the QR immediately — its own save
@@ -247,6 +219,11 @@ async function loadManageContributions() {
   loadPaymentSettings();
 
   const requestedId = new URLSearchParams(window.location.search).get("period");
+
+  // Arriving via the "Edit" link on a Past periods row should land
+  // straight on the tab that link is actually about, not the
+  // default first tab — see activateAdminTab() in admin-tabs.js.
+  if (requestedId) activateAdminTab("goal");
 
   const { data: period, error: periodError } = requestedId
     ? await supabaseClient.from("periods").select("*").eq("id", requestedId).single()

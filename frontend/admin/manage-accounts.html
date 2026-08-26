@@ -12,6 +12,7 @@
   <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="/admin/admin.css" />
+  <link rel="stylesheet" href="/account/auth.css" />
 </head>
 <body>
 
@@ -43,7 +44,7 @@
   <main class="admin-main wrap">
     <div class="admin-intro">
       <h1>Manage Accounts</h1>
-      <p>Every member, their role, and their status. Changes save immediately and are logged.</p>
+      <p>Every member. Click Edit on a row to change anything about them — changes save immediately and are logged.</p>
     </div>
 
     <div class="admin-nav-bar">
@@ -74,18 +75,21 @@
 
       <p class="form-error" id="accounts-error" role="alert"></p>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>In-game name</th>
-            <th>Real name</th>
-            <th>Discord</th>
-            <th>Role</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="accounts-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>In-game name</th>
+              <th>Real name</th>
+              <th>Discord</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="accounts-rows"></tbody>
+        </table>
+      </div>
       <div id="accounts-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="accounts-prev-page">Previous</button>
@@ -93,6 +97,62 @@
       </div>
     </div>
   </main>
+
+  <!-- ===== EDIT MEMBER (modal) ===== -->
+  <div class="modal-overlay" id="edit-account-overlay" hidden>
+    <div class="auth-card modal-panel">
+      <button type="button" class="modal-close-btn" id="edit-account-close-btn" aria-label="Close">×</button>
+      <h1>Edit member</h1>
+      <p class="auth-sub">Editing <strong id="edit-account-name-heading"></strong>.</p>
+
+      <form id="edit-account-form" class="form-styled" novalidate>
+        <input type="hidden" id="edit-account-id" value="" />
+
+        <label for="edit-in-game-name">In-game name</label>
+        <input type="text" id="edit-in-game-name" required />
+
+        <label for="edit-real-name">Real name</label>
+        <input type="text" id="edit-real-name" required />
+
+        <label for="edit-discord-username">Discord username <span class="optional">(optional)</span></label>
+        <input type="text" id="edit-discord-username" />
+
+        <label for="edit-role">Role</label>
+        <select id="edit-role">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <label for="edit-status">Status</label>
+        <select id="edit-status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="left">Left</option>
+        </select>
+
+        <label for="edit-rank">Rank</label>
+        <select id="edit-rank">
+          <option value="none">None</option>
+          <option value="vip">VIP</option>
+          <option value="mvp">MVP</option>
+        </select>
+
+        <label for="edit-rank-days">Rank days remaining</label>
+        <input type="number" id="edit-rank-days" min="0" step="1" placeholder="0" />
+
+        <label class="checkbox-row checkbox-row--voxel">
+          <input type="checkbox" id="edit-battlepass-active" class="radio-input" />
+          <span class="radio-box" aria-hidden="true"></span>
+          <span>Active Legacy Pass <span class="optional">(always a fresh 31 days when turned on)</span></span>
+        </label>
+
+        <p class="form-error" id="edit-account-error" role="alert"></p>
+
+        <button type="submit" class="btn-gold" id="edit-account-submit-btn">Save changes</button>
+        <button type="button" class="btn-ghost modal-cancel-btn" id="edit-account-cancel-btn">Cancel</button>
+      </form>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/supabase-client.js"></script>

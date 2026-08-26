@@ -59,7 +59,18 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
+/* width:100% matters specifically on the five admin pages, where
+   .wrap sits directly on <main> — a flex item of body (see the
+   sticky-footer rule above). margin:0 auto there is an auto
+   cross-axis margin in a column flex container, and per the flexbox
+   spec, align-self:stretch is skipped whenever either cross-axis
+   margin is auto — so without an explicit width, that <main> sized
+   itself to fit its widest child (e.g. a wide table) instead of the
+   viewport, silently dragging everything inside it wider than the
+   screen on mobile. Everywhere else .wrap sits on an ordinary block
+   inside <main>, where this is a no-op (already the default). */
 .wrap {
+  width: 100%;
   max-width: 900px;
   margin: 0 auto;
   padding: 0 24px;
@@ -733,7 +744,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 18px;
+  padding: 10px 16px;
   background: var(--panel);
   border-bottom: 1px solid var(--panel-border);
 }
@@ -768,19 +779,31 @@ h1 {
 
 /* Used only by rows that also show a purchase breakdown (what a
    contribution was actually for) — .ledger-row stays a plain single
-   line everywhere else (expense lists, legacy-only ledger entries).
-   .ledger-row-main reuses the exact layout .ledger-row normally has;
-   the modifier just stacks that plus a second line of tags. */
-.ledger-row--stacked { flex-direction: column; align-items: stretch; gap: 8px; }
+   line everywhere else (expense lists, legacy-only ledger entries,
+   anything with nothing to tag). With room to spare, this keeps
+   everything on one line — name, then purpose tags centered in the
+   middle, then date + amount — instead of leaving a lot of empty
+   vertical space per row; it only drops to three stacked lines under
+   the mobile breakpoint below, where there isn't enough width for
+   all three to sit side by side without crowding. */
+.ledger-row--stacked .ledger-tags { flex: 1; justify-content: center; }
 
-.ledger-row-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+/* My Contributions adds a 4th piece — a rejection reason — as a
+   sibling of .ledger-who/.ledger-tags/.ledger-right when a
+   submission was rejected. That doesn't fit the single-line layout
+   above at any width (a full sentence crammed in beside name/tags/
+   amount), so those specific rows stay stacked regardless of screen
+   size instead of only dropping to it under the mobile breakpoint. */
+.ledger-row--stacked:has(.ledger-msg) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
 }
 
-.ledger-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.ledger-row--stacked:has(.ledger-msg) .ledger-tags { flex: none; justify-content: flex-start; }
+.ledger-row--stacked:has(.ledger-msg) .ledger-right { align-self: flex-end; }
+
+.ledger-tags { display: flex; flex-wrap: wrap; gap: 5px; }
 
 .ledger-date { color: var(--text-faint); }
 .ledger-amount { color: var(--emerald); font-weight: 500; }
@@ -917,9 +940,13 @@ h1 {
    this is purely a display override (see contributors.js). Distinct
    colors so a rank + Battlepass badge shown side by side never look
    like the same kind of thing. */
-.status-badge--vip { background: rgba(53, 181, 106, 0.15); color: var(--emerald); }
-.status-badge--mvp { background: rgba(232, 195, 74, 0.15); color: var(--gold); }
-.status-badge--battlepass { background: rgba(138, 95, 214, 0.15); color: #8a5fd6; }
+.status-badge--vip { background: rgba(224, 138, 60, 0.15); color: #e08a3c; }
+.status-badge--mvp { background: rgba(138, 95, 214, 0.15); color: #8a5fd6; }
+/* Literal gold hex, not var(--gold) — that variable actually holds
+   the site's green accent color now (see the --gold comment in the
+   design tokens at the top of this file), so using it here rendered
+   green instead of gold. */
+.status-badge--battlepass { background: rgba(232, 195, 74, 0.15); color: #e8c34a; }
 
 /* compact secondary buttons */
 .btn-small {
@@ -1181,7 +1208,74 @@ h1 {
 .shop-card--wide { margin-bottom: 28px; }
 .shop-card--wide .see-all { display: inline-block; margin-top: 12px; }
 
+/* Wide content (a 4-column table) needs to scroll inside its own
+   container on a narrow screen rather than forcing the whole page
+   to scroll sideways. */
+.table-scroll { overflow-x: auto; }
+
+.perks-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+
+.perks-table th {
+  text-align: center;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  padding: 10px;
+  border-bottom: 1px solid var(--panel-border);
+  white-space: nowrap;
+}
+
+.perks-table th:first-child { text-align: left; }
+
+.perks-table td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.perks-table td:first-child { text-align: left; color: var(--text); }
+
+.perks-table tr:last-child td { border-bottom: none; }
+
+.perk-note {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.perk-yes { color: var(--emerald); font-weight: 700; }
+.perk-no { color: var(--text-faint); }
+
+.perks-note { margin-top: 12px; }
+
 .shop-cta { text-align: center; }
+
+/* The "what you currently have" line above the shop cards — each
+   active perk gets its own colored badge (see renderMyStatus() in
+   shop.js) instead of being merged into one plain sentence, so
+   rank/Legacy Pass and their expiry dates are each easy to pick out
+   at a glance. */
+#my-shop-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  max-width: none;
+}
+
+.my-shop-label { color: var(--text-dim); font-size: 0.95rem; }
+
+.my-shop-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+.my-shop-empty { color: var(--text-dim); font-size: 1.05rem; }
 
 /* =========================================================
    BATTLEPASS PAGE
@@ -1318,6 +1412,7 @@ h1 {
 .contributor-avatar svg { width: 30px; height: 30px; }
 
 .contributor-name { font-weight: 600; margin-bottom: 6px; }
+.contributor-you { font-weight: 400; color: var(--gold); }
 .contributor-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* =========================================================
@@ -1472,6 +1567,54 @@ html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
 .voxel-pop { animation: voxel-pop 0.3s ease backwards; }
 
 /* =========================================================
+   MODAL — a centered floating panel over a dimmed backdrop, used
+   for Manage Accounts' "Edit member" so it gets its own focused
+   space instead of squeezing into the page layout inline. The panel
+   itself just adds class="auth-card" (defined in account/auth.css)
+   on top of this, reusing the exact same card look "My Profile"
+   already has, rather than a separate visual style for one form.
+   ========================================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  padding: 24px;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.modal-overlay[hidden] { display: none; }
+
+/* margin:auto (not align-items/justify-content on the overlay)
+   centers this — auto margins in a flex container never go
+   negative, so when the panel is taller than the viewport it starts
+   flush at the top and scrolls normally, instead of align-items:
+   center clipping its top edge the way it would here. */
+.modal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: auto;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+.modal-close-btn:hover { color: var(--text); }
+
+.modal-cancel-btn { width: 100%; text-align: center; margin-top: 10px; }
+
+/* =========================================================
    RESPONSIVE
    ========================================================= */
 @media (max-width: 640px) {
@@ -1487,8 +1630,11 @@ html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
   .shop-grid { grid-template-columns: 1fr; }
   .ledger-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .ledger-right { align-self: flex-end; }
-  .ledger-row-main { flex-direction: column; align-items: flex-start; gap: 6px; }
-  .ledger-row-main .ledger-right { align-self: flex-end; }
+  /* Undoes the wide-screen centering above — once .ledger-row's
+     column stacking (just above) kicks in, the tags need to wrap
+     naturally at their own left edge instead of trying to center
+     within a flex-grown middle "column" that no longer exists. */
+  .ledger-row--stacked .ledger-tags { flex: none; justify-content: flex-start; }
   .install-panel { flex-direction: column; align-items: stretch; }
   .install-panel .btn-gold { width: 100%; text-align: center; }
   .battlepass-no-pass { flex-direction: column; align-items: stretch; }

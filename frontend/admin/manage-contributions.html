@@ -64,8 +64,16 @@
     </nav>
     </div>
 
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab active" data-tab="settings" role="tab" aria-selected="true">Payment settings</button>
+      <button type="button" class="admin-tab" data-tab="shop" role="tab" aria-selected="false">Shop pricing</button>
+      <button type="button" class="admin-tab" data-tab="goal" role="tab" aria-selected="false">This month's goal</button>
+      <button type="button" class="admin-tab" data-tab="sidegoals" role="tab" aria-selected="false">Side goals</button>
+      <button type="button" class="admin-tab" data-tab="past" role="tab" aria-selected="false">Past periods</button>
+    </div>
+
     <!-- ===== PAYMENT SETTINGS ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="settings" role="tabpanel">
       <h2>Payment settings</h2>
       <p class="admin-card-sub">Shown to members on the payment page — where their GCash send should actually go.</p>
 
@@ -100,7 +108,7 @@
     </div>
 
     <!-- ===== SHOP PRICING ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="shop" role="tabpanel" hidden>
       <h2>Shop pricing</h2>
       <p class="admin-card-sub">What members pay for a rank or the Legacy Pass — shown on the payment page.</p>
 
@@ -121,26 +129,15 @@
       </div>
       <p class="form-error" id="shop-prices-error" role="alert"></p>
       <p class="form-success" id="shop-prices-success" role="status"></p>
-
-      <hr class="section-divider" />
-      <p class="admin-card-sub">What each one actually gets you in-game — shown on the Shop page.</p>
-
-      <label for="vip-description" class="field-label">VIP description</label>
-      <textarea id="vip-description" class="admin-textarea" rows="2" placeholder="e.g. Colored name, /fly, exclusive kits"></textarea>
-
-      <label for="mvp-description" class="field-label">MVP description</label>
-      <textarea id="mvp-description" class="admin-textarea" rows="2" placeholder="Everything VIP gets, plus..."></textarea>
-
-      <label for="battlepass-description" class="field-label">Legacy Pass description</label>
-      <textarea id="battlepass-description" class="admin-textarea" rows="2" placeholder="31 days of daily login rewards..."></textarea>
-
-      <button type="button" class="btn-small" id="save-shop-descriptions-btn">Save descriptions</button>
-      <p class="form-error" id="shop-descriptions-error" role="alert"></p>
-      <p class="form-success" id="shop-descriptions-success" role="status"></p>
+      <p class="field-hint">
+        Rank perks and the Legacy Pass total are shown on the Shop page automatically — rank
+        perks from a fixed table, the Legacy Pass total computed from its 31-day reward
+        schedule — so there's nothing to fill in here for either one.
+      </p>
     </div>
 
     <!-- ===== THIS MONTH'S GOAL ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="goal" role="tabpanel" hidden>
       <h2 id="period-heading">This month's goal</h2>
       <p class="admin-card-sub" id="back-to-current"></p>
       <p class="admin-card-sub">
@@ -169,16 +166,18 @@
       </form>
       <p class="form-error" id="expense-error" role="alert"></p>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>For</th>
-            <th>Amount</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="expense-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>For</th>
+              <th>Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="expense-rows"></tbody>
+        </table>
+      </div>
       <div id="expense-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="expense-prev-page">Previous</button>
@@ -197,7 +196,7 @@
     </div>
 
     <!-- ===== SIDE GOALS ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="sidegoals" role="tabpanel" hidden>
       <h2>Side goals</h2>
       <p class="admin-card-sub">Optional, voluntary goals outside the regular monthly split.</p>
 
@@ -214,17 +213,19 @@
       </form>
       <p class="form-error" id="side-goal-error" role="alert"></p>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Progress</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="side-goal-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Progress</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="side-goal-rows"></tbody>
+        </table>
+      </div>
       <div id="side-goal-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="side-goal-prev-page">Previous</button>
@@ -233,21 +234,23 @@
     </div>
 
     <!-- ===== PAST PERIODS ===== -->
-    <div class="admin-card">
+    <div class="admin-card" data-panel="past" role="tabpanel" hidden>
       <h2>Past periods</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Month</th>
-            <th>Name</th>
-            <th>Total expenses</th>
-            <th>Per member</th>
-            <th>Surplus</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="past-period-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Name</th>
+              <th>Total expenses</th>
+              <th>Per member</th>
+              <th>Surplus</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="past-period-rows"></tbody>
+        </table>
+      </div>
       <div id="past-period-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="past-period-prev-page">Previous</button>
@@ -262,6 +265,7 @@
   <script src="/pwa-register.js"></script>
   <script src="/auth-guard.js"></script>
   <script src="/admin/admin-guard.js"></script>
+  <script src="/admin/admin-tabs.js"></script>
   <script src="/admin/manage-contributions.js"></script>
   <script>
     (async () => {

@@ -47,16 +47,14 @@ function renderLedgerRows(contributions) {
 
     return `
       <div class="ledger-row ledger-row--stacked">
-        <div class="ledger-row-main">
-          <div class="ledger-who">
-            <span class="ledger-name">${escapeHtml(c.name)}</span>
-          </div>
-          <div class="ledger-right">
-            <span class="ledger-date">${formatDate(c.date)}</span>
-            <span class="ledger-amount">+${money(c.amount)}</span>
-          </div>
+        <div class="ledger-who">
+          <span class="ledger-name">${escapeHtml(c.name)}</span>
         </div>
         <div class="ledger-tags">${tags.join("")}</div>
+        <div class="ledger-right">
+          <span class="ledger-date">${formatDate(c.date)}</span>
+          <span class="ledger-amount">+${money(c.amount)}</span>
+        </div>
       </div>
     `;
   }).join("");
@@ -103,11 +101,22 @@ async function loadLedger() {
       name: row.contributor_name,
       amount: row.amount,
       date: row.contributed_on,
+      sortAt: row.sort_at,
       targetLabel: row.target_label,
       rankPurchased: row.rank_purchased,
       battlepassPurchased: row.battlepass_purchased,
     }))
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    // Full timestamp, not just the date — two contributions on the
+    // same calendar day still need a real most-recent-first order
+    // (see public_contribution_ledger()'s sort_at in
+    // database/19_ledger_sort_precision.sql), not whatever order
+    // the query happened to return them in. Falls back to the
+    // day-only `date` if sort_at is ever missing (e.g. that
+    // migration hasn't been run yet against this database) — better
+    // than every comparison silently returning NaN, which browsers
+    // treat as "leave it in whatever order the query returned," and
+    // that raw order tends to put the newest row last.
+    .sort((a, b) => new Date(b.sortAt || b.date) - new Date(a.sortAt || a.date));
 
   renderFullLedger();
 

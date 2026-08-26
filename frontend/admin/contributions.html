@@ -64,9 +64,63 @@
     </nav>
     </div>
 
-    <div class="admin-card">
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab active" data-tab="live" role="tab" aria-selected="true">
+        Live submissions <span class="admin-tab-count" id="live-count">0</span>
+      </button>
+      <button type="button" class="admin-tab" data-tab="legacy" role="tab" aria-selected="false">
+        Historical contributions <span class="admin-tab-count" id="legacy-count">0</span>
+      </button>
+    </div>
+
+    <div class="admin-card" data-panel="live" role="tabpanel">
       <h2>Live submissions</h2>
-      <p class="admin-card-sub">Made through the app's proof-upload-and-approve flow.</p>
+      <p class="admin-card-sub">
+        Made through the app's proof-upload-and-approve flow — or added manually below for a
+        payment that came in outside the site (cash, bank transfer, GCash sent straight to you).
+      </p>
+
+      <button type="button" class="btn-small" id="manual-payment-toggle-btn">+ Add manual entry</button>
+
+      <form id="manual-payment-form" class="inline-form" hidden>
+        <input type="hidden" id="manual-payment-id" value="" />
+        <div class="field field--grow">
+          <label for="manual-payment-user">Member</label>
+          <select id="manual-payment-user" required></select>
+        </div>
+        <div class="field field--grow">
+          <label for="manual-payment-target">What's this for?</label>
+          <select id="manual-payment-target">
+            <option value="">None — shop purchase only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="manual-payment-rank">Rank</label>
+          <select id="manual-payment-rank">
+            <option value="">None</option>
+            <option value="vip">VIP</option>
+            <option value="mvp">MVP</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="manual-payment-amount">Amount</label>
+          <input type="number" id="manual-payment-amount" min="0.01" step="0.01" placeholder="0.00" required />
+        </div>
+        <div class="field">
+          <label for="manual-payment-date">Date</label>
+          <input type="date" id="manual-payment-date" required />
+        </div>
+        <div class="field">
+          <label for="manual-payment-battlepass">Legacy Pass</label>
+          <select id="manual-payment-battlepass">
+            <option value="">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-gold" id="manual-payment-submit-btn">Add entry</button>
+        <button type="button" class="btn-ghost" id="manual-payment-cancel-btn">Cancel</button>
+      </form>
+      <p class="form-error" id="manual-payment-error" role="alert"></p>
 
       <div class="inline-form">
         <div class="field">
@@ -84,18 +138,22 @@
         </div>
       </div>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>For</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Submitted</th>
-          </tr>
-        </thead>
-        <tbody id="contributions-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>For</th>
+              <th>Purpose</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="contributions-rows"></tbody>
+        </table>
+      </div>
       <div id="contributions-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="contributions-prev-page">Previous</button>
@@ -103,7 +161,7 @@
       </div>
     </div>
 
-    <div class="admin-card">
+    <div class="admin-card" data-panel="legacy" role="tabpanel" hidden>
       <h2>Historical contributions</h2>
       <p class="admin-card-sub">
         Real history from before this site existed, imported from the original tracking spreadsheet.
@@ -134,17 +192,19 @@
         </div>
       </div>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Amount</th>
-            <th>Date</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="legacy-rows"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="legacy-rows"></tbody>
+        </table>
+      </div>
       <div id="legacy-empty"></div>
       <div class="ledger-pagination">
         <button type="button" class="btn-ghost" id="legacy-prev-page">Previous</button>
@@ -159,6 +219,7 @@
   <script src="/pwa-register.js"></script>
   <script src="/auth-guard.js"></script>
   <script src="/admin/admin-guard.js"></script>
+  <script src="/admin/admin-tabs.js"></script>
   <script src="/admin/admin-contributions.js"></script>
   <script>
     (async () => {
@@ -167,6 +228,7 @@
         renderAccountNav(user);
         loadContributions();
         loadLegacyContributions();
+        loadManualPaymentFormOptions();
       }
     })();
   </script>

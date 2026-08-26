@@ -40,6 +40,21 @@ function targetLabel(row) {
   return "—";
 }
 
+// Everything a submission actually covers — dues/side-goal target
+// plus whatever shop items came with it — as one glanceable list,
+// same breakdown the public ledger already shows via its tags (see
+// ledger.js). Says "Dues" rather than repeating the month "For"
+// already shows; a side goal gets named since that's genuinely
+// different information, not a repeat of the same word.
+function purposeLabel(row) {
+  const parts = [];
+  if (row.side_goal_title) parts.push(escapeHtml(row.side_goal_title));
+  else if (row.period_month) parts.push("Dues");
+  if (row.rank_purchased) parts.push(row.rank_purchased.toUpperCase());
+  if (row.battlepass_purchased) parts.push("Legacy Pass");
+  return parts.length > 0 ? parts.join(", ") : "—";
+}
+
 // ---------- payments ----------
 
 let allPendingPayments = [];
@@ -69,6 +84,7 @@ function renderPaymentRows() {
     <tr data-submission-id="${row.id}">
       <td>${escapeHtml(row.in_game_name)}</td>
       <td>${targetLabel(row)}</td>
+      <td>${purposeLabel(row)}</td>
       <td class="num">${money(row.amount_claimed)}</td>
       <td class="num">${escapeHtml(row.gcash_ref)}</td>
       <td>${row.screenshot_url ? `<button type="button" class="btn-small" data-view-screenshot="${escapeHtml(row.screenshot_url)}">View</button>` : "—"}</td>
@@ -149,6 +165,7 @@ async function loadPendingPayments() {
   }
 
   allPendingPayments = data || [];
+  document.getElementById("payments-count").textContent = allPendingPayments.length;
   renderPaymentRows();
 }
 
@@ -236,6 +253,7 @@ async function loadPendingLeaveRequests() {
   }
 
   allPendingLeaveRequests = data || [];
+  document.getElementById("leave-count").textContent = allPendingLeaveRequests.length;
   renderLeaveRows();
 }
 
@@ -306,6 +324,7 @@ async function loadExpiredRanks() {
   }
 
   allExpiredRanks = data || [];
+  document.getElementById("ranks-count").textContent = allExpiredRanks.length;
   renderRankRows();
 }
 
@@ -376,6 +395,7 @@ async function loadPendingDeliveries() {
   }
 
   allPendingDeliveries = data || [];
+  document.getElementById("deliveries-count").textContent = allPendingDeliveries.length;
   renderDeliveryRows();
 }
 

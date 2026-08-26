@@ -46,6 +46,15 @@ let shopPrices = { vip: 0, mvp: 0, battlepass: 0 };
 let discountBalance = 0;
 let lastAutoFilledAmount = null; // tracks whether the amount field still matches OUR last estimate, so we don't clobber a manual edit
 
+// Current rank/Legacy Pass state — used by applyShopLocks() to lock
+// out an invalid selection (MVP holder can't pick VIP; can't buy a
+// second Legacy Pass while one's active) and by updateCheckoutSummary()
+// to preview the VIP->MVP upgrade bonus. null/false means "nothing
+// active right now."
+let currentRank = null;
+let currentRankExpiresAt = null;
+let activeBattlepassExpiry = null;
+
 async function loadCurrentPeriod() {
   const { data: period } = await supabaseClient
     .from("periods")
@@ -135,9 +144,80 @@ async function loadGcashSettings() {
   return data;
 }
 
-async function loadMyDiscountBalance() {
+// Also reads rank/rank_expires_at now — get_my_profile() already
+// returned these, they just weren't read before applyShopLocks()
+// needed them.
+async function loadMyProfile() {
   const { data } = await supabaseClient.rpc("get_my_profile");
-  return data && data[0] ? Number(data[0].discount_credits) || 0 : 0;
+  const me = data && data[0] ? data[0] : null;
+  return {
+    discountBalance: me ? Number(me.discount_credits) || 0 : 0,
+    rank: me ? me.rank : null,
+    rankExpiresAt: me ? me.rank_expires_at : null,
+  };
+}
+
+async function loadMyActiveBattlepass() {
+  const { data } = await supabaseClient
+    .from("battlepass_cycles")
+    .select("expires_at")
+    .order("expires_at", { ascending: false })
+    .limit(1);
+
+  const latest = data && data[0] ? data[0] : null;
+  return latest && new Date(latest.expires_at) > new Date() ? latest.expires_at : null;
+}
+
+function rankIsActive(rank, expiresAt) {
+  return rank && rank !== "none" && expiresAt && new Date(expiresAt) > new Date();
+}
+
+// 50% of the remaining VIP time carries over as bonus days on an
+// upgrade to MVP — same formula as apply_shop_purchase() in
+// database/24_rank_upgrade_logic.sql, kept in sync by hand since one
+// lives in JS (for the live preview) and one in SQL (what actually
+// gets granted). Rounding matches that spec exactly: over .5 rounds
+// up, .5 or under rounds down.
+function computeUpgradeBonusDays() {
+  if (!rankIsActive(currentRank, currentRankExpiresAt) || currentRank !== "vip") return 0;
+
+  const remainingDays = Math.max(0, (new Date(currentRankExpiresAt).getTime() - Date.now()) / 86400000);
+  const bonusRaw = remainingDays * 0.5;
+  const fraction = bonusRaw - Math.floor(bonusRaw);
+  return fraction > 0.5 ? Math.ceil(bonusRaw) : Math.floor(bonusRaw);
+}
+
+// Disables whichever rank/Legacy Pass option the member currently
+// can't select, with a short explanation — rather than letting them
+// pick it and only finding out it's rejected after they've already
+// filled out and submitted the whole form. Mirrors the rules
+// apply_shop_purchase() enforces server-side.
+function applyShopLocks() {
+  const vipInput = document.querySelector('input[name="payment-rank"][value="vip"]');
+  const rankLockHint = document.getElementById("rank-lock-hint");
+
+  if (currentRank === "mvp" && rankIsActive(currentRank, currentRankExpiresAt)) {
+    vipInput.disabled = true;
+    rankLockHint.textContent =
+      `You already have MVP until ${formatDate(currentRankExpiresAt)} — it needs to expire before you can select VIP.`;
+    rankLockHint.hidden = false;
+  } else {
+    vipInput.disabled = false;
+    rankLockHint.hidden = true;
+  }
+
+  const battlepassInput = document.getElementById("payment-battlepass");
+  const battlepassLockHint = document.getElementById("battlepass-lock-hint");
+
+  if (activeBattlepassExpiry) {
+    battlepassInput.disabled = true;
+    battlepassLockHint.textContent =
+      `You already have an active Legacy Pass until ${formatDate(activeBattlepassExpiry)} — you can buy another once it expires.`;
+    battlepassLockHint.hidden = false;
+  } else {
+    battlepassInput.disabled = false;
+    battlepassLockHint.hidden = true;
+  }
 }
 
 function renderGcashDetails(settings) {
@@ -169,10 +249,18 @@ async function loadActiveSideGoals() {
   return data || [];
 }
 
-// Adds one radio option per active side goal, and hides/disables
-// whichever half of the choice doesn't apply (no open period, or
-// no side goals) so the form can't be submitted with nothing
-// valid selected.
+// Adds one option per active side goal. These render as checkboxes,
+// not radios — see wireForm()'s payment-target listener, which
+// enforces "at most one checked" by hand. That's what lets clicking
+// the currently-selected option unselect it again, landing back on
+// "nothing selected" — a native radio group can never reach that
+// state once one option's been picked, and that "nothing" state is
+// exactly a shop-only purchase (rank and/or Legacy Pass, no dues/
+// side-goal component — see submit_payment() in
+// database/16_shop_only_payments.sql, which is what actually allows
+// this rather than rejecting it). Hides "Dues" when there's no
+// open period, leaving nothing checked in that case
+// rather than forcing a side-goal pick the member may not want.
 function renderSideGoalOptions(sideGoals, period) {
   const group = document.getElementById("payment-target-group");
   const duesOption = group.querySelector('input[value="period"]').closest(".radio-option");
@@ -181,7 +269,7 @@ function renderSideGoalOptions(sideGoals, period) {
     const label = document.createElement("label");
     label.className = "radio-option";
     label.innerHTML = `
-      <input type="radio" name="payment-target" value="sidegoal:${g.id}" class="radio-input" />
+      <input type="checkbox" name="payment-target" value="sidegoal:${g.id}" class="radio-input" />
       <span class="radio-box" aria-hidden="true"></span>
       ${escapeHtml(g.title)}
     `;
@@ -190,13 +278,7 @@ function renderSideGoalOptions(sideGoals, period) {
 
   if (!period) {
     duesOption.hidden = true;
-    const firstSideGoalInput = group.querySelector('input[value^="sidegoal:"]');
-    if (firstSideGoalInput) firstSideGoalInput.checked = true;
-  }
-
-  if (!period && sideGoals.length === 0) {
-    document.getElementById("payment-submit-btn").disabled = true;
-    document.getElementById("payment-error").textContent = "Nothing open to contribute to right now.";
+    duesOption.querySelector("input").checked = false;
   }
 }
 
@@ -226,11 +308,22 @@ function updateCheckoutSummary() {
   const checkedRank = document.querySelector('input[name="payment-rank"]:checked');
   const battlepassChecked = document.getElementById("payment-battlepass").checked;
 
+  const bonusHintEl = document.getElementById("upgrade-bonus-hint");
+  if (checkedRank && checkedRank.value === "mvp" && currentRank === "vip" && rankIsActive(currentRank, currentRankExpiresAt)) {
+    const bonusDays = computeUpgradeBonusDays();
+    bonusHintEl.textContent = bonusDays > 0
+      ? `Upgrading now carries over ${bonusDays} bonus day${bonusDays === 1 ? "" : "s"} from your remaining VIP time, on top of the usual 30 days of MVP.`
+      : "Upgrading now — your remaining VIP time is under a day, so no bonus days carry over, but you'll still get the usual 30 days of MVP.";
+    bonusHintEl.hidden = false;
+  } else {
+    bonusHintEl.hidden = true;
+  }
+
   const rows = [];
   let subtotal = 0;
 
   if (checkedTarget && checkedTarget.value === "period" && currentPeriod) {
-    rows.push({ label: "This month's dues (live estimate)", amount: currentPeriod.duePerMember });
+    rows.push({ label: "Dues (live estimate)", amount: currentPeriod.duePerMember });
     subtotal += currentPeriod.duePerMember;
   } else if (checkedTarget && checkedTarget.value.startsWith("sidegoal:")) {
     rows.push({ label: "Side goal (enter your own amount below)", amount: null });
@@ -302,15 +395,31 @@ async function loadRemainingBalance() {
   renderSummaryTiles(currentPeriod, remaining);
 }
 
+// Enforces "at most one checked" by hand for a same-name group of
+// checkboxes used as a single-choice-or-none picker (payment-target,
+// payment-rank) — unlike a radio group, a checkbox can be clicked
+// again to return to "nothing checked", which is what lets both of
+// these pickers default to "none of these" without a dedicated
+// option for it.
+function wireExclusiveCheckboxGroup(name, onChange) {
+  const inputs = document.querySelectorAll(`input[name="${name}"]`);
+  inputs.forEach(input => {
+    input.addEventListener("change", () => {
+      if (input.checked) {
+        inputs.forEach(other => {
+          if (other !== input) other.checked = false;
+        });
+      }
+      onChange();
+    });
+  });
+}
+
 function wireForm() {
   // Any change to what's being bought re-estimates the total and
   // (usually) re-fills "Amount sent" — see updateCheckoutSummary().
-  document.querySelectorAll('input[name="payment-target"]').forEach(input => {
-    input.addEventListener("change", updateCheckoutSummary);
-  });
-  document.querySelectorAll('input[name="payment-rank"]').forEach(input => {
-    input.addEventListener("change", updateCheckoutSummary);
-  });
+  wireExclusiveCheckboxGroup("payment-target", updateCheckoutSummary);
+  wireExclusiveCheckboxGroup("payment-rank", updateCheckoutSummary);
   document.getElementById("payment-battlepass").addEventListener("change", updateCheckoutSummary);
 
   document.getElementById("payment-form").addEventListener("submit", async (e) => {
@@ -327,8 +436,12 @@ function wireForm() {
     const ref = document.getElementById("payment-ref").value.trim();
     const file = document.getElementById("payment-screenshot").files[0];
 
-    if (!checkedTarget) {
-      errorEl.textContent = "Choose what this payment is for.";
+    // checkedTarget being null is a valid state now (nothing
+    // selected — a shop-only purchase), not an error on its own —
+    // it's only a problem if there's also no rank and no battlepass,
+    // i.e. this payment isn't for anything at all.
+    if (!checkedTarget && !(checkedRank && checkedRank.value) && !battlepassChecked) {
+      errorEl.textContent = "Choose what this payment is for — dues, a side goal, or a shop purchase.";
       return;
     }
     if (!amount || amount <= 0) {
@@ -376,11 +489,13 @@ function wireForm() {
       p_battlepass_purchased: battlepassChecked,
       p_discount_applied: discountApplied,
     };
-    if (checkedTarget.value === "period") {
+    if (checkedTarget && checkedTarget.value === "period") {
       params.p_period_id = currentPeriod.id;
-    } else {
+    } else if (checkedTarget && checkedTarget.value.startsWith("sidegoal:")) {
       params.p_side_goal_id = checkedTarget.value.split(":")[1];
     }
+    // else: nothing selected — p_period_id/p_side_goal_id both stay
+    // null, a pure shop purchase.
 
     const { error: submitError } = await supabaseClient.rpc("submit_payment", params);
 
@@ -404,20 +519,25 @@ function wireForm() {
 async function loadPaymentPage(user) {
   currentUser = user;
 
-  const [period, sideGoals, settings, balance] = await Promise.all([
+  const [period, sideGoals, settings, profile, battlepassExpiry] = await Promise.all([
     loadCurrentPeriod(),
     loadActiveSideGoals(),
     loadGcashSettings(),
-    loadMyDiscountBalance(),
+    loadMyProfile(),
+    loadMyActiveBattlepass(),
   ]);
 
   currentPeriod = period;
-  discountBalance = balance;
+  discountBalance = profile.discountBalance;
+  currentRank = profile.rank;
+  currentRankExpiresAt = profile.rankExpiresAt;
+  activeBattlepassExpiry = battlepassExpiry;
 
   renderPeriodCard(period);
   renderGcashDetails(settings);
   renderShopOptions(settings);
   renderSideGoalOptions(sideGoals, period);
+  applyShopLocks();
   wireForm();
   updateCheckoutSummary();
 

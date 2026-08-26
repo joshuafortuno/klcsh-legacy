@@ -65,6 +65,85 @@
   margin-bottom: 24px;
 }
 
+/* =========================================================
+   ADMIN TABS — replaces several stacked .admin-cards with a
+   single-panel-at-a-time view, on the pages that had piled up too
+   many of them (Notifications, Manage Contributions, Contributions).
+   Wired by admin-tabs.js: each [data-tab] button shows the
+   .admin-card sharing its data-panel value and hides the rest. Same
+   underline-tab visual language as .admin-nav above it, just one
+   level down.
+   ========================================================= */
+/* flex-wrap:wrap alone isn't enough on a narrow phone — a single
+   long label ("Pending in-game deliveries", "Historical
+   contributions") can be wider than the viewport on its own, and
+   since html/body have overflow-x:hidden globally, that overflow
+   doesn't show as a scrollbar, it just gets silently clipped off-
+   screen. overflow-x:auto + nowrap makes the tab row scroll within
+   its own box instead, the same fix .admin-table already got. */
+.admin-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-bottom: 20px;
+  animation: admin-drop-in 0.3s ease;
+}
+
+.admin-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 4px 4px 0 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.admin-tab:hover { color: var(--text); background: var(--panel-raised); }
+
+.admin-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--gold);
+}
+
+.admin-tab-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+.admin-tab.active .admin-tab-count { color: var(--gold); border-color: var(--gold-dark); }
+
+@keyframes admin-drop-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes admin-lift-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
+/* Panels sit in normal flow during the swap (nothing measures
+   heights or takes anything out of flow) — the brief moment where
+   outgoing and incoming panels briefly overlap in the page's height
+   is a few hundred ms and not worth the complexity of avoiding. */
+.admin-panel-enter { animation: admin-drop-in 0.28s ease; }
+.admin-panel-leave { animation: admin-lift-out 0.2s ease forwards; }
+
 .admin-card h2 {
   font-family: var(--font-display);
   font-size: 1.15rem;
@@ -106,7 +185,16 @@
 
 .admin-stat.needs-attention .admin-stat-value { color: var(--redstone); }
 
-/* generic table used for lists of profiles/payments/expenses/etc */
+/* generic table used for lists of profiles/payments/expenses/etc.
+   Deliberately does NOT set display:block/overflow-x here — that
+   makes the table's internal column layout size to its content
+   (shrink-to-fit) instead of stretching to fill the available
+   width, leaving a gap on any screen wide enough to fit it
+   comfortably. The actual scroll-when-too-wide behavior lives on
+   the wrapping .table-scroll div in each page's markup instead (see
+   .table-scroll in style.css), which lets the table keep its normal
+   full-width layout when there's room and only scroll when there
+   genuinely isn't. */
 .admin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 
 .admin-table th {
@@ -153,12 +241,28 @@
   border-bottom: 1px solid var(--panel-border);
 }
 
-.inline-form .field { display: flex; flex-direction: column; gap: 4px; }
+/* .inline-form's own display:flex above (an author-stylesheet rule)
+   otherwise beats the browser's default [hidden] { display: none },
+   since author rules win over the UA stylesheet at equal specificity
+   — so a toggleable .inline-form (like #manual-payment-form) stayed
+   visibly flex even with the hidden attribute set and correctly
+   toggled by JS. This re-asserts it. */
+.inline-form[hidden] { display: none; }
+
+/* min-width:0 lets a field shrink below its content's natural size —
+   without it, a flex item defaults to min-width:auto, so a <select>
+   with a long option (a long side-goal title, a period label with
+   its status appended) could refuse to shrink and push the whole
+   row — and the page — wider than the viewport. */
+.inline-form .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .inline-form .field label { font-size: 0.78rem; color: var(--text-faint); }
 
 .inline-form input[type="text"],
 .inline-form input[type="number"],
+.inline-form input[type="date"],
 .inline-form select {
+  width: 100%;
+  min-width: 0;
   background: var(--panel-raised);
   border: 1px solid var(--panel-border);
   color: var(--text);
@@ -222,7 +326,7 @@
 .activity-time { color: var(--text-faint); font-size: 0.78rem; }
 
 @media (max-width: 640px) {
-  .admin-table { display: block; overflow-x: auto; }
+  .admin-tab { padding: 8px 10px; font-size: 0.8rem; }
 
   /* Five tabs wrapping across two or three lines eats a lot of
      screen on a phone — collapse them into a toggle-triggered

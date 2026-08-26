@@ -61,19 +61,17 @@ function renderMyContributions() {
   emptyEl.innerHTML = "";
   listEl.innerHTML = pageItems.map(row => `
     <div class="ledger-row ledger-row--stacked">
-      <div class="ledger-row-main">
-        <div class="ledger-who">
-          <span class="ledger-name">${targetLabel(row)}</span>
-        </div>
-        <div class="ledger-right">
-          <span class="ledger-date">${formatDate(row.submitted_at)}</span>
-          <span class="ledger-amount">${money(row.amount_claimed)}</span>
-        </div>
+      <div class="ledger-who">
+        <span class="ledger-name">${targetLabel(row)}</span>
       </div>
       <div class="ledger-tags">
         <span class="status-badge status-badge--${row.status}">${row.status}</span>
         ${row.rank_purchased ? `<span class="status-badge status-badge--${row.rank_purchased}">${row.rank_purchased}</span>` : ""}
         ${row.battlepass_purchased ? `<span class="status-badge status-badge--battlepass">Battlepass</span>` : ""}
+      </div>
+      <div class="ledger-right">
+        <span class="ledger-date">${formatDate(row.submitted_at)}</span>
+        <span class="ledger-amount">${money(row.amount_claimed)}</span>
       </div>
       ${row.rejection_reason ? `<div class="ledger-msg">"${escapeHtml(row.rejection_reason)}"</div>` : ""}
     </div>

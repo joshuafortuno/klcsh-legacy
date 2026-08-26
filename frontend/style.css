@@ -526,14 +526,16 @@ h1 {
 
 .goal-meta .highlight { color: var(--emerald); font-weight: 500; }
 
-/* A slow, rotating "chasing light" ring around the spotlight goal
-   card — the page's signature element, so it's the one thing that
-   gets this treatment rather than every card on the page. Classic
-   technique: a wrapper with a few px of padding + overflow:hidden
-   forms the ring gap, and an oversized conic-gradient pseudo-
-   element rotates behind the (opaque) card, clipped down to just
-   that gap. Animates a transform instead of the gradient's own
-   angle, so it doesn't need @property / has wider browser support. */
+/* A slow, rotating "chasing light" ring — used on the spotlight
+   goal card (the page's signature element) and the homepage shop
+   ad's featured MVP tier, deliberately not on every card, so it
+   still reads as "this one's special" rather than decoration.
+   Classic technique: a wrapper with a few px of padding +
+   overflow:hidden forms the ring gap, and an oversized conic-
+   gradient pseudo-element rotates behind the (opaque) card, clipped
+   down to just that gap. Animates a transform instead of the
+   gradient's own angle, so it doesn't need @property / has wider
+   browser support. */
 .goal-card-glow {
   position: relative;
   border-radius: calc(var(--radius) + 3px);
@@ -562,7 +564,8 @@ h1 {
   z-index: 0;
 }
 
-.goal-card-glow .goal-card {
+.goal-card-glow .goal-card,
+.goal-card-glow .shop-ad-card {
   position: relative;
   z-index: 1;
 }
@@ -682,6 +685,59 @@ h1 {
   color: var(--text-dim);
   font-size: 0.9rem;
 }
+
+/* =========================================================
+   SHOP AD — homepage teaser for the Shop, an extra funding channel
+   beyond plain dues (see .contribute-cta further down, which stays
+   focused on donating). Prices come live from site_settings (see
+   renderShopAd() in script.js) so a price change in Manage
+   Contributions shows up here too. MVP gets the rotating glow ring
+   (.goal-card-glow, shared with the spotlight goal card) as the
+   featured tier — one eye-catching highlight, not all three cards
+   competing for attention.
+   ========================================================= */
+.shop-ad { margin-bottom: 72px; }
+
+.shop-ad-sub { max-width: none; text-align: center; margin-bottom: 32px; }
+
+.shop-ad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.shop-ad-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 26px 22px;
+  text-align: center;
+  height: 100%;
+}
+
+.shop-ad-card--featured { border-color: var(--gold-dark); }
+
+.shop-ad-icon { font-size: 1.8rem; margin-bottom: 10px; }
+
+.shop-ad-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.shop-ad-price {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.shop-ad-price span { font-size: 0.75rem; color: var(--text-faint); font-family: var(--font-body); }
+
+.shop-ad-card p { color: var(--text-dim); font-size: 0.88rem; }
+
+.shop-ad-cta { text-align: center; }
 
 /* =========================================================
    SHOUTOUTS (testimonial-shaped, real ledger messages)
@@ -809,6 +865,35 @@ h1 {
 .ledger-amount { color: var(--emerald); font-weight: 500; }
 
 .ledger-controls { margin-bottom: 16px; }
+
+/* Toggleable filter row (Contributors: Active/Inactive/VIP/MVP/
+   Battlepass) — status filters are mutually exclusive (a member is
+   one or the other), perk filters combine with OR (VIP+Battlepass
+   shows anyone with either), and the two groups combine with AND;
+   see matchesContributorFilters() in contributors.js. Each pill's
+   active state borrows the exact color its .status-badge counterpart
+   already uses, so the filter reads as "highlight this badge" rather
+   than a separate visual language. */
+.filter-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+.filter-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-raised);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.filter-pill:hover { border-color: var(--gold-dark); color: var(--text); }
+
+.filter-pill.active[data-filter="active"] { background: rgba(53, 181, 106, 0.15); border-color: var(--emerald); color: var(--emerald); }
+.filter-pill.active[data-filter="inactive"] { background: var(--panel-border); border-color: var(--text-dim); color: var(--text); }
+.filter-pill.active[data-filter="vip"] { background: rgba(224, 138, 60, 0.15); border-color: #e08a3c; color: #e08a3c; }
+.filter-pill.active[data-filter="mvp"] { background: rgba(138, 95, 214, 0.15); border-color: #8a5fd6; color: #8a5fd6; }
+.filter-pill.active[data-filter="battlepass"] { background: rgba(232, 195, 74, 0.15); border-color: var(--gold-dark); color: #e8c34a; }
 
 #ledger-search {
   width: 100%;
@@ -1506,6 +1591,7 @@ h1 {
 }
 
 .feature-card:hover,
+.shop-ad-card:hover,
 .goal-mini:hover,
 .shoutout-card:hover,
 .contributor-card:hover,
@@ -1622,6 +1708,7 @@ html.nav-enter-right main { transform: translateX(32px); opacity: 0; }
   .stats-strip { grid-template-columns: 1fr; gap: 16px; }
   .goal-grid { grid-template-columns: 1fr; }
   .feature-grid { grid-template-columns: 1fr; }
+  .shop-ad-grid { grid-template-columns: 1fr; }
   .shoutout-grid { grid-template-columns: 1fr; }
   .info-list { grid-template-columns: 1fr; }
   .addon-grid { grid-template-columns: 1fr; }

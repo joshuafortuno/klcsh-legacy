@@ -200,6 +200,47 @@ async function renderGoalGrid() {
   }).join("");
 }
 
+// Homepage teaser for the Shop — a second funding channel besides
+// plain dues, so it gets its own pitch rather than being folded into
+// .contribute-cta at the bottom (that one stays a plain donate ask).
+// Prices come live from site_settings, the same source shop.js
+// itself reads, so a price change in Manage Contributions shows up
+// here too without a separate edit. This is a public pitch to
+// everyone, not personalized — unlike shop.js it doesn't check
+// what rank/pass the viewer currently has.
+async function renderShopAd() {
+  const { data: settings } = await supabaseClient
+    .from("site_settings")
+    .select("vip_price, mvp_price, battlepass_price")
+    .eq("id", 1)
+    .single();
+
+  if (!settings) return;
+
+  document.getElementById("shop-ad-grid").innerHTML = `
+    <div class="shop-ad-card">
+      <div class="shop-ad-icon">⭐</div>
+      <h3>VIP</h3>
+      <div class="shop-ad-price">${money(settings.vip_price)}<span>/month</span></div>
+      <p>Extra claimblocks, more claim slots, and better crate loot.</p>
+    </div>
+    <div class="goal-card-glow">
+      <div class="shop-ad-card shop-ad-card--featured">
+        <div class="shop-ad-icon">👑</div>
+        <h3>MVP</h3>
+        <div class="shop-ad-price">${money(settings.mvp_price)}<span>/month</span></div>
+        <p>Everything VIP gets, plus healing, feeding, and silk touch on certain blocks.</p>
+      </div>
+    </div>
+    <div class="shop-ad-card">
+      <div class="shop-ad-icon">🎟️</div>
+      <h3>Legacy Pass</h3>
+      <div class="shop-ad-price">${money(settings.battlepass_price)}</div>
+      <p>31 days of daily login rewards — claimblocks and discounts, day after day.</p>
+    </div>
+  `;
+}
+
 // Run everything once the page loads
 (async () => {
   const [period, stats] = await Promise.all([
@@ -211,3 +252,4 @@ async function renderGoalGrid() {
 })();
 renderShoutoutCards();
 renderGoalGrid();
+renderShopAd();

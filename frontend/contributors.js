@@ -29,13 +29,43 @@ const PAGE_SIZE = 10;
 let allContributors = [];
 let contributorsPage = 1;
 let currentUserId = null;
+const activeFilters = new Set(); // "active" | "inactive" | "vip" | "mvp" | "battlepass"
+
+const STATUS_FILTERS = new Set(["active", "inactive"]);
+const PERK_FILTERS = new Set(["vip", "mvp", "battlepass"]);
+
+// Status filters are mutually exclusive by nature (a member is one
+// status), so multiple selected ones combine with OR. Perk filters
+// combine with OR too (VIP + Battlepass shows anyone with either,
+// not only someone with both). The two GROUPS combine with AND —
+// picking "Active" + "VIP" narrows to active VIP members. No filters
+// selected at all just shows everyone, same as today.
+function matchesContributorFilters(c) {
+  if (activeFilters.size === 0) return true;
+
+  const selectedStatuses = [...activeFilters].filter(f => STATUS_FILTERS.has(f));
+  const selectedPerks = [...activeFilters].filter(f => PERK_FILTERS.has(f));
+
+  if (selectedStatuses.length > 0 && !selectedStatuses.includes(c.status)) return false;
+
+  if (selectedPerks.length > 0) {
+    const matchesAnyPerk = selectedPerks.some(perk => {
+      if (perk === "battlepass") return c.hasBattlepass;
+      return c.rank === perk;
+    });
+    if (!matchesAnyPerk) return false;
+  }
+
+  return true;
+}
 
 function renderContributors() {
   const needle = document.getElementById("contributors-search").value.trim().toLowerCase();
 
-  const filtered = needle
-    ? allContributors.filter(c => c.in_game_name.toLowerCase().includes(needle))
-    : allContributors;
+  const filtered = allContributors.filter(c => {
+    if (needle && !c.in_game_name.toLowerCase().includes(needle)) return false;
+    return matchesContributorFilters(c);
+  });
 
   const listEl = document.getElementById("contributor-list");
   const emptyEl = document.getElementById("contributor-empty");
@@ -120,6 +150,20 @@ async function loadContributors(user) {
   document.getElementById("contributors-search").addEventListener("input", () => {
     contributorsPage = 1;
     renderContributors();
+  });
+  document.querySelectorAll("#contributors-filters [data-filter]").forEach(pill => {
+    pill.addEventListener("click", () => {
+      const filter = pill.dataset.filter;
+      if (activeFilters.has(filter)) {
+        activeFilters.delete(filter);
+        pill.classList.remove("active");
+      } else {
+        activeFilters.add(filter);
+        pill.classList.add("active");
+      }
+      contributorsPage = 1;
+      renderContributors();
+    });
   });
   document.getElementById("contributors-prev-page").addEventListener("click", () => {
     contributorsPage -= 1;

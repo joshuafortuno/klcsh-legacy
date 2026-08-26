@@ -57,8 +57,13 @@ function renderContributors() {
 
   emptyEl.innerHTML = "";
   listEl.innerHTML = pageItems.map(c => {
-    const roleOrRankBadge = c.rank && c.rank !== "none"
-      ? `<span class="status-badge status-badge--${c.rank}">${c.rank}</span>`
+    // Rank replaces the plain "member" badge (more interesting to
+    // show), but never hides "admin" — that's shown after the rank
+    // badge instead of being swallowed by it.
+    const hasRank = c.rank && c.rank !== "none";
+    const roleOrRankBadge = hasRank
+      ? `<span class="status-badge status-badge--${c.rank}">${c.rank}</span>` +
+        (c.role === "admin" ? `<span class="status-badge status-badge--admin">admin</span>` : "")
       : `<span class="status-badge status-badge--${c.role}">${c.role}</span>`;
     const battlepassBadge = c.hasBattlepass ? `<span class="status-badge status-badge--battlepass">Battlepass</span>` : "";
 

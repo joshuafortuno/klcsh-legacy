@@ -716,7 +716,26 @@ h1 {
   height: 100%;
 }
 
-.shop-ad-card--featured { border-color: var(--gold-dark); }
+/* Deliberately no resting border-color override here — the rotating
+   glow ring (.goal-card-glow, wrapping this card) already marks it
+   as the featured tier on its own. A static tinted border on top of
+   that looked like a permanently "active"/highlighted state even
+   with nothing hovered, which is exactly what looked wrong. Hover
+   gets its own reaction instead of relying on a border-color change
+   (the shared .shop-ad-card:hover rule's border-color: gold would've
+   been a no-op here anyway): a warmer glow shadow, plus the
+   surrounding ring spins faster while hovered. transform is reset to
+   none — the shared rule's translateY(-4px) would otherwise lift this
+   card's top edge into the wrapper's overflow:hidden (needed to clip
+   the oversized glow-ring gradient), cutting it off. */
+.shop-ad-card--featured:hover {
+  transform: none;
+  box-shadow: 0 12px 32px rgba(232, 195, 74, 0.4);
+}
+
+.goal-card-glow:hover::before {
+  animation-duration: 1.4s;
+}
 
 .shop-ad-icon { font-size: 1.8rem; margin-bottom: 10px; }
 

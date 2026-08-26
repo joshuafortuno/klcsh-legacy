@@ -736,7 +736,7 @@ h1 {
    element's own box-shadow is never clipped by its own
    overflow:hidden, but a *descendant's* shadow extending past the
    wrapper would be (same clipping the ring gradient relies on). Put
-   on the card, this shadow got cut flat at the wrapper's edge :has()
+   on the card, this shadow got cut flat at the wrapper's edge. :has()
    scopes it to just the shop-ad wrapper, not every .goal-card-glow
    (e.g. the spotlight goal card doesn't get this shadow). */
 .goal-card-glow:has(.shop-ad-card--featured):hover {

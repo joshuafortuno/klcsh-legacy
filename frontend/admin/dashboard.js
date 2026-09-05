@@ -5,7 +5,10 @@
   summary view: the current period's goal vs. what's actually
   been collected, active member count, pending-item counts (via
   the cheap admin_pending_counts() function, no decryption
-  needed just to show a badge), and a recent-activity feed from
+  needed just to show a badge), all-time totals split into
+  contribution vs. shop (admin_dashboard_totals() — see
+  database/30_admin_dashboard_totals.sql for how a payment splits
+  between the two), and a recent-activity feed from
   status_audit_log. money()/formatDateTime()/escapeHtml() come
   from /utils.js, loaded before this file.
   --------------------------------------------------------
@@ -42,11 +45,13 @@ async function loadDashboard() {
     activeCountResult,
     countsResult,
     activityResult,
+    totalsResult,
   ] = await Promise.all([
     supabaseClient.rpc("admin_get_or_create_open_period"),
     supabaseClient.from("profiles").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabaseClient.rpc("admin_pending_counts"),
     supabaseClient.from("status_audit_log").select("*").order("created_at", { ascending: false }).limit(8),
+    supabaseClient.rpc("admin_dashboard_totals"),
   ]);
 
   const period = periodResult.data;
@@ -54,6 +59,12 @@ async function loadDashboard() {
   const counts = countsResult.data && countsResult.data[0]
     ? countsResult.data[0]
     : { pending_payments: 0, pending_leave_requests: 0, expired_ranks: 0, pending_deliveries: 0 };
+  // all_time/contribution/shop totals — see admin_dashboard_totals()
+  // in database/30_admin_dashboard_totals.sql for how a payment
+  // splits between contribution and shop.
+  const totals = totalsResult.data && totalsResult.data[0]
+    ? totalsResult.data[0]
+    : { all_time_total: 0, contribution_total: 0, shop_total: 0 };
 
   let goalTotal = 0;
   let raised = 0;
@@ -84,6 +95,18 @@ async function loadDashboard() {
     <div class="admin-stat ${pendingTotal > 0 ? "needs-attention" : ""}">
       <div class="admin-stat-value">${pendingTotal}</div>
       <div class="admin-stat-label">Pending in Notifications</div>
+    </div>
+    <div class="admin-stat">
+      <div class="admin-stat-value">${money(totals.all_time_total)}</div>
+      <div class="admin-stat-label">Raised — all time</div>
+    </div>
+    <div class="admin-stat">
+      <div class="admin-stat-value">${money(totals.contribution_total)}</div>
+      <div class="admin-stat-label">Monthly contributions — all time</div>
+    </div>
+    <div class="admin-stat">
+      <div class="admin-stat-value">${money(totals.shop_total)}</div>
+      <div class="admin-stat-label">Shop purchases — all time (VIP/MVP/Pass/mini goals)</div>
     </div>
   `;
 

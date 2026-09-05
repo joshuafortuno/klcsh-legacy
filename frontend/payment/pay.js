@@ -55,6 +55,13 @@ let currentRank = null;
 let currentRankExpiresAt = null;
 let activeBattlepassExpiry = null;
 
+// Set by loadRemainingBalance() — true once the member has a pending
+// or approved dues payment for the current period. No installments:
+// submit_payment() now requires a single dues submission to cover
+// the full due amount, so there's never a reason to let someone
+// select "Dues" a second time — see applyShopLocks().
+let hasDuesPaymentForPeriod = false;
+
 async function loadCurrentPeriod() {
   const { data: period } = await supabaseClient
     .from("periods")
@@ -223,6 +230,19 @@ function applyShopLocks() {
     battlepassInput.disabled = false;
     battlepassLockHint.hidden = true;
   }
+
+  const duesInput = document.querySelector('input[name="payment-target"][value="period"]');
+  const duesLockHint = document.getElementById("dues-lock-hint");
+
+  if (hasDuesPaymentForPeriod) {
+    duesInput.checked = false;
+    duesInput.disabled = true;
+    duesLockHint.textContent = "You already have a dues payment for this period — no need for another one.";
+    duesLockHint.hidden = false;
+  } else {
+    duesInput.disabled = false;
+    duesLockHint.hidden = true;
+  }
 }
 
 function renderGcashDetails(settings) {
@@ -389,13 +409,19 @@ async function loadRemainingBalance() {
 
   const { data } = await supabaseClient
     .from("payment_submissions")
-    .select("amount_claimed")
+    .select("amount_claimed, status")
     .eq("user_id", currentUser.id)
-    .eq("period_id", currentPeriod.id)
-    .eq("status", "approved");
+    .eq("period_id", currentPeriod.id);
 
-  const approvedForPeriod = (data || []).reduce((sum, r) => sum + Number(r.amount_claimed), 0);
+  const rows = data || [];
+  const approvedForPeriod = rows
+    .filter(r => r.status === "approved")
+    .reduce((sum, r) => sum + Number(r.amount_claimed), 0);
   const remaining = Math.max(0, currentPeriod.duePerMember - approvedForPeriod);
+
+  // A rejected payment doesn't count — that's not "already paid",
+  // it's cleared to try again.
+  hasDuesPaymentForPeriod = rows.some(r => r.status === "pending" || r.status === "approved");
 
   renderSummaryTiles(currentPeriod, remaining);
 }
@@ -542,9 +568,9 @@ async function loadPaymentPage(user) {
   renderGcashDetails(settings);
   renderShopOptions(settings);
   renderSideGoalOptions(sideGoals, period);
-  applyShopLocks();
   wireForm();
   updateCheckoutSummary();
 
-  await loadRemainingBalance();
+  await loadRemainingBalance(); // sets hasDuesPaymentForPeriod — must resolve before applyShopLocks()
+  applyShopLocks();
 }

@@ -23,6 +23,12 @@ async function loadBattlepass() {
   const statusEl = document.getElementById("battlepass-status");
   const noPassEl = document.getElementById("battlepass-no-pass");
 
+  if (BATTLEPASS_DISABLED) {
+    statusEl.textContent = "The Legacy Pass is temporarily unavailable — check back later.";
+    noPassEl.hidden = true;
+    return;
+  }
+
   const [{ data: schedule, error: scheduleError }, { data: cycles }] = await Promise.all([
     supabaseClient
       .from("battlepass_reward_schedule")

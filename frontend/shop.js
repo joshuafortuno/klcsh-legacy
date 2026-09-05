@@ -39,6 +39,7 @@ async function loadShop() {
   document.getElementById("battlepass-price").textContent = money(settings.battlepass_price);
 
   document.getElementById("battlepass-description").textContent = battlepassTotalLabel(schedule || []);
+  document.getElementById("battlepass-unavailable-badge").hidden = !BATTLEPASS_DISABLED;
 
   const me = profile && profile[0] ? profile[0] : null;
   const latestCycle = cycles && cycles[0] ? cycles[0] : null;

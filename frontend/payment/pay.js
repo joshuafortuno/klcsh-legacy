@@ -209,7 +209,12 @@ function applyShopLocks() {
   const battlepassInput = document.getElementById("payment-battlepass");
   const battlepassLockHint = document.getElementById("battlepass-lock-hint");
 
-  if (activeBattlepassExpiry) {
+  if (BATTLEPASS_DISABLED) {
+    battlepassInput.checked = false;
+    battlepassInput.disabled = true;
+    battlepassLockHint.textContent = "Legacy Pass purchases are temporarily unavailable.";
+    battlepassLockHint.hidden = false;
+  } else if (activeBattlepassExpiry) {
     battlepassInput.disabled = true;
     battlepassLockHint.textContent =
       `You already have an active Legacy Pass until ${formatDate(activeBattlepassExpiry)} — you can buy another once it expires.`;

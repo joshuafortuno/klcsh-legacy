@@ -21,6 +21,13 @@
   --------------------------------------------------------
 */
 
+// Temporary kill switch for the Legacy Pass (battlepass) feature —
+// flip back to false to restore it. One flag, shared by every page
+// that touches battlepass (pay.js's purchase checkbox, battlepass.js's
+// claim page), so re-enabling it later is a single-line change
+// instead of hunting down every place it's gated.
+const BATTLEPASS_DISABLED = true;
+
 function escapeHtml(value) {
   if (value === null || value === undefined) return "";
   return String(value)

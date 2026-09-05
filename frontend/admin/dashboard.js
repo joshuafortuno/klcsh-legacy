@@ -80,33 +80,43 @@ async function loadDashboard() {
   const pendingTotal = counts.pending_payments + counts.pending_leave_requests + counts.expired_ranks + counts.pending_deliveries;
 
   statsEl.innerHTML = `
-    <div class="admin-stat">
-      <div class="admin-stat-value">${money(raised)}</div>
-      <div class="admin-stat-label">Raised — ${period ? escapeHtml(period.title) || "This month" : "This month"}</div>
+    <div class="admin-stats-group">
+      <h2 class="admin-stats-group-title">${period ? escapeHtml(period.title) || "This period" : "This period"}</h2>
+      <div class="admin-stats">
+        <div class="admin-stat">
+          <div class="admin-stat-value">${money(raised)}</div>
+          <div class="admin-stat-label">Raised</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-value">${money(goalTotal)}</div>
+          <div class="admin-stat-label">Goal (itemized expenses so far)</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-value">${activeCount}</div>
+          <div class="admin-stat-label">Active members</div>
+        </div>
+        <div class="admin-stat ${pendingTotal > 0 ? "needs-attention" : ""}">
+          <div class="admin-stat-value">${pendingTotal}</div>
+          <div class="admin-stat-label">Pending in Notifications</div>
+        </div>
+      </div>
     </div>
-    <div class="admin-stat">
-      <div class="admin-stat-value">${money(goalTotal)}</div>
-      <div class="admin-stat-label">Goal (itemized expenses so far)</div>
-    </div>
-    <div class="admin-stat">
-      <div class="admin-stat-value">${activeCount}</div>
-      <div class="admin-stat-label">Active members</div>
-    </div>
-    <div class="admin-stat ${pendingTotal > 0 ? "needs-attention" : ""}">
-      <div class="admin-stat-value">${pendingTotal}</div>
-      <div class="admin-stat-label">Pending in Notifications</div>
-    </div>
-    <div class="admin-stat">
-      <div class="admin-stat-value">${money(totals.all_time_total)}</div>
-      <div class="admin-stat-label">Raised — all time</div>
-    </div>
-    <div class="admin-stat">
-      <div class="admin-stat-value">${money(totals.contribution_total)}</div>
-      <div class="admin-stat-label">Monthly contributions — all time</div>
-    </div>
-    <div class="admin-stat">
-      <div class="admin-stat-value">${money(totals.shop_total)}</div>
-      <div class="admin-stat-label">Shop purchases — all time (VIP/MVP/Pass/mini goals)</div>
+    <div class="admin-stats-group">
+      <h2 class="admin-stats-group-title">All time</h2>
+      <div class="admin-stats">
+        <div class="admin-stat">
+          <div class="admin-stat-value">${money(totals.all_time_total)}</div>
+          <div class="admin-stat-label">Raised</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-value">${money(totals.contribution_total)}</div>
+          <div class="admin-stat-label">Monthly contributions</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-value">${money(totals.shop_total)}</div>
+          <div class="admin-stat-label">Shop purchases (VIP/MVP/Pass/mini goals)</div>
+        </div>
+      </div>
     </div>
   `;
 

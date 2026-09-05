@@ -156,12 +156,26 @@
   margin-bottom: 18px;
 }
 
-/* summary tiles on the Dashboard page */
+/* Groups of summary tiles on the Dashboard page ("This period" /
+   "All time") — each group is its own small grid rather than one
+   long flat one, so an odd tile count (4 + 3, say) doesn't end up
+   auto-wrapping into a lopsided leftover row that reads as
+   disorganized. minmax's lower bound is set so 4 tiles and 3 tiles
+   each settle into one full-width row at typical desktop widths
+   instead of wrapping unpredictably. */
+.admin-stats-group { margin-bottom: 24px; }
+
+.admin-stats-group-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
-  margin-bottom: 24px;
 }
 
 .admin-stat {

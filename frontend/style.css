@@ -287,18 +287,48 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   z-index: 20;
 }
 
-.notification-list { display: flex; flex-direction: column; gap: 2px; }
-
-.notification-item {
+/* Header row above the list — title + "Clear all". Only shown once
+   there's actually something to clear (see renderList() in
+   auth-guard.js), rather than sitting there uselessly on an empty
+   inbox. */
+.notification-dropdown-header {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  width: 100%;
-  text-align: left;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.notification-dropdown-title { font-size: 0.8rem; font-weight: 600; color: var(--text-dim); }
+
+.notification-clear-all-btn {
   background: none;
   border: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  padding: 0;
+}
+
+.notification-clear-all-btn:hover { color: var(--gold); }
+
+.notification-list { display: flex; flex-direction: column; gap: 2px; }
+
+/* A row is now a flex container split between the clickable
+   message/time block (.notification-item-main, still a <button> —
+   click marks it read) and a separate remove button, rather than the
+   whole row being one <button> — nesting a second interactive
+   control inside a <button> isn't valid markup. Hover/unread
+   backgrounds stay on this outer wrapper so the remove button is
+   visually part of the same highlighted row. */
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
   border-radius: 4px;
-  padding: 9px 10px;
+  padding: 4px;
   color: var(--text-dim);
 }
 
@@ -311,8 +341,40 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 
 .notification-item--unread:hover { background: rgba(232, 195, 74, 0.14); }
 
+.notification-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 6px;
+  color: inherit;
+}
+
 .notification-message { font-size: 0.85rem; line-height: 1.4; }
 .notification-time { font-size: 0.72rem; color: var(--text-faint); }
+
+.notification-remove-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-faint);
+  margin-top: 5px;
+}
+
+.notification-remove-btn:hover { color: var(--redstone); background: rgba(192, 57, 43, 0.12); }
 
 .notification-empty {
   padding: 24px 10px;

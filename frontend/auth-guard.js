@@ -215,6 +215,10 @@ async function renderAccountNav(user) {
           <span class="notification-badge" id="notification-badge" hidden></span>
         </button>
         <div class="notification-dropdown" id="notification-dropdown" role="menu" hidden>
+          <div class="notification-dropdown-header" id="notification-dropdown-header" hidden>
+            <span class="notification-dropdown-title">Notifications</span>
+            <button type="button" class="notification-clear-all-btn" id="notification-clear-all-btn">Clear all</button>
+          </div>
           <div class="notification-list" id="notification-list"></div>
         </div>
       </div>
@@ -280,12 +284,20 @@ function wireProfileMenu() {
   shows up without a page reload. Marking read only happens when
   you click an individual notification — opening the dropdown
   itself doesn't mark anything read, by design.
+
+  Each row also has its own × (removeNotification()) and there's a
+  "Clear all" above the list (clearAllNotifications(), confirm()-gated
+  since it's irreversible) — both real DELETEs against the member's
+  own rows (see database/28_notification_delete.sql for the RLS
+  policy this needs), not just hiding them client-side.
 */
 function wireNotificationBell(user) {
   let notifications = [];
 
   const btn = document.getElementById("notification-icon-btn");
   const dropdown = document.getElementById("notification-dropdown");
+  const headerEl = document.getElementById("notification-dropdown-header");
+  const clearAllBtn = document.getElementById("notification-clear-all-btn");
   const listEl = document.getElementById("notification-list");
   const badgeEl = document.getElementById("notification-badge");
 
@@ -300,17 +312,31 @@ function wireNotificationBell(user) {
   }
 
   function renderList() {
+    headerEl.hidden = notifications.length === 0;
+
     listEl.innerHTML = notifications.length === 0
       ? `<div class="notification-empty">Nothing yet.</div>`
       : notifications.map(n => `
-          <button type="button" class="notification-item ${n.read ? "" : "notification-item--unread"}" data-notif-id="${n.id}">
-            <span class="notification-message">${escapeHtml(n.message)}</span>
-            <span class="notification-time">${formatDateTime(n.created_at)}</span>
-          </button>
+          <div class="notification-item ${n.read ? "" : "notification-item--unread"}">
+            <button type="button" class="notification-item-main" data-notif-id="${n.id}">
+              <span class="notification-message">${escapeHtml(n.message)}</span>
+              <span class="notification-time">${formatDateTime(n.created_at)}</span>
+            </button>
+            <button type="button" class="notification-remove-btn" data-remove-id="${n.id}" aria-label="Remove notification">×</button>
+          </div>
         `).join("");
 
     listEl.querySelectorAll("[data-notif-id]").forEach(item => {
       item.addEventListener("click", () => markNotificationRead(item.dataset.notifId));
+    });
+
+    // stopPropagation so clicking × doesn't also fire the row's own
+    // click handler above and mark it read on its way out.
+    listEl.querySelectorAll("[data-remove-id]").forEach(removeBtn => {
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeNotification(removeBtn.dataset.removeId);
+      });
     });
 
     renderBadge();
@@ -330,10 +356,46 @@ function wireNotificationBell(user) {
     }
   }
 
+  async function removeNotification(id) {
+    const index = notifications.findIndex(n => n.id === id);
+    if (index === -1) return;
+
+    const [removed] = notifications.splice(index, 1);
+    renderList(); // optimistic — same reasoning as markNotificationRead()
+
+    const { error } = await supabaseClient.from("notifications").delete().eq("id", id);
+    if (error) {
+      notifications.splice(index, 0, removed); // put it back if the delete actually failed
+      renderList();
+    }
+  }
+
+  async function clearAllNotifications() {
+    if (notifications.length === 0) return;
+    if (!confirm("Clear all notifications? This can't be undone.")) return;
+
+    const previous = notifications;
+    notifications = [];
+    renderList();
+
+    const { error } = await supabaseClient.from("notifications").delete().eq("user_id", user.id);
+    if (error) {
+      notifications = previous; // put them all back if the delete actually failed
+      renderList();
+    }
+  }
+
   function closeDropdown() {
     dropdown.hidden = true;
     btn.setAttribute("aria-expanded", "false");
   }
+
+  // stopPropagation so this doesn't also trigger the outside-click
+  // handler below (which would close the dropdown mid-confirm()).
+  clearAllBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    clearAllNotifications();
+  });
 
   btn.addEventListener("click", (e) => {
     e.stopPropagation();

@@ -20,5 +20,4 @@
 /admin/contributions      /admin/contributions.html                   200
 /admin/manage-contributions  /admin/manage-contributions.html         200
 /admin/manage-accounts       /admin/manage-accounts.html              200
-/admin/whitelist             /admin/whitelist.html                    200
 /admin/notifications         /admin/notifications.html                200

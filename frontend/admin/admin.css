@@ -224,6 +224,69 @@
   font-size: 0.9rem;
 }
 
+/* A plain on/off slider for instant per-row toggles (e.g. Whitelist)
+   — distinct from .checkbox-row--voxel, which is for a form field you
+   still have to submit. Built on a real checkbox for free keyboard/
+   screen-reader support; the checkbox itself is visually hidden and
+   .toggle-track is what actually renders, driven by :checked. */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.toggle-track::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: var(--gold-dark);
+  border-color: var(--gold);
+}
+
+.toggle-switch input:checked + .toggle-track::before {
+  transform: translateX(18px);
+  background: var(--text);
+}
+
+.toggle-switch input:focus-visible + .toggle-track {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.toggle-switch input:disabled + .toggle-track {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* .status-badge and .btn-small moved to /style.css — the payment
    page (outside /admin/) needs them too, and neither is really
    admin-specific. */

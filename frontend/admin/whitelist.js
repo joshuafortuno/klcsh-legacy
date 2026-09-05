@@ -16,13 +16,16 @@
   instant) and rolled back if the write fails, same pattern
   auth-guard.js's notification-read toggle already uses.
 
-  No pagination here (unlike Manage Accounts) — this list is already
-  bounded to non-'left' members, so it doesn't grow with the
-  community's full historical roster the way the account list does.
+  Paged 10 at a time, same pattern (and PAGE_SIZE) as Manage Accounts
+  — renderWhitelistRows() re-clamps the current page to whatever the
+  search filter leaves, so searching down to a shorter list can't
+  strand you on a now-empty page.
   --------------------------------------------------------
 */
 
+const PAGE_SIZE = 10;
 let allWhitelistProfiles = [];
+let whitelistPage = 1;
 
 function renderWhitelistRows() {
   const needle = document.getElementById("whitelist-search").value.trim().toLowerCase();
@@ -33,15 +36,24 @@ function renderWhitelistRows() {
 
   const rowsEl = document.getElementById("whitelist-rows");
   const emptyEl = document.getElementById("whitelist-empty");
+  const prevBtn = document.getElementById("whitelist-prev-page");
+  const nextBtn = document.getElementById("whitelist-next-page");
 
   if (filtered.length === 0) {
     rowsEl.innerHTML = "";
     emptyEl.innerHTML = `<div class="admin-empty">No members match.</div>`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  whitelistPage = Math.max(1, Math.min(whitelistPage, totalPages));
+  const start = (whitelistPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
   emptyEl.innerHTML = "";
-  rowsEl.innerHTML = filtered.map(p => `
+  rowsEl.innerHTML = pageItems.map(p => `
     <tr>
       <td>${escapeHtml(p.in_game_name)}</td>
       <td>${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</td>
@@ -57,6 +69,9 @@ function renderWhitelistRows() {
   rowsEl.querySelectorAll("[data-whitelist-toggle]").forEach(input => {
     input.addEventListener("change", () => toggleWhitelisted(input));
   });
+
+  prevBtn.disabled = whitelistPage <= 1;
+  nextBtn.disabled = whitelistPage >= totalPages;
 }
 
 async function toggleWhitelisted(input) {
@@ -96,5 +111,18 @@ async function loadWhitelist() {
   allWhitelistProfiles = (data || []).filter(p => p.status !== "left");
   renderWhitelistRows();
 
-  document.getElementById("whitelist-search").addEventListener("input", renderWhitelistRows);
+  document.getElementById("whitelist-search").addEventListener("input", () => {
+    whitelistPage = 1; // a new search term starts back at the top of its own results
+    renderWhitelistRows();
+  });
+
+  document.getElementById("whitelist-prev-page").addEventListener("click", () => {
+    whitelistPage--;
+    renderWhitelistRows();
+  });
+
+  document.getElementById("whitelist-next-page").addEventListener("click", () => {
+    whitelistPage++;
+    renderWhitelistRows();
+  });
 }

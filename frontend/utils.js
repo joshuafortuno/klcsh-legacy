@@ -26,7 +26,7 @@
 // that touches battlepass (pay.js's purchase checkbox, battlepass.js's
 // claim page), so re-enabling it later is a single-line change
 // instead of hunting down every place it's gated.
-const BATTLEPASS_DISABLED = true;
+const BATTLEPASS_DISABLED = false;
 
 function escapeHtml(value) {
   if (value === null || value === undefined) return "";

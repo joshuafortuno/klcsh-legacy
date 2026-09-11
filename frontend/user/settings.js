@@ -16,12 +16,16 @@
     grant in database/03_profile_management.sql) and real_name
     goes through update_real_name() to get re-encrypted. But if
     get_my_profile() comes back with NO row — meaning
-    create_profile() never ran for this account (e.g. they
-    confirmed their email on a different device than the one they
-    registered on, so auth-login.js's handoff never happened) —
-    saving falls back to calling create_profile() directly
-    instead, same as a first-time signup would have. hasProfile
-    tracks which path applies.
+    create_profile() never ran for this account — saving falls
+    back to calling create_profile() directly instead, same as a
+    first-time signup would have. hasProfile tracks which path
+    applies. In practice this is now a last-resort fallback:
+    auth-guard.js's ensureProfile() already tries to create the
+    row automatically from signUp() metadata on every page load,
+    and force-redirects here if that didn't work (e.g. an account
+    that signed up before that existed, with no metadata to work
+    from) — so landing on this page with no profile yet is the
+    expected recovery path for that case, not a dead end.
 
   - Account status: shows your current status and, if you don't
     already have a pending request, buttons to ask for a change —

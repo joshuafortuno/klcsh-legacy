@@ -12,12 +12,17 @@
   confirmed and logged in — so create_profile()'s auth.uid()
   had nothing to return, and the insert failed with a null id.
 
-  Instead, we stash what they typed in localStorage and finish
-  creating the profile on their first successful login (see
-  auth-login.js), once a real session exists. If they confirm
-  on a different device than the one they registered on, this
-  stashed data won't be there — the Settings page (My Profile)
-  can create the row from scratch in that case instead.
+  Instead, what they typed goes through as signUp()'s own
+  `options.data` — Supabase stores that as metadata on the
+  auth.users row itself, not in localStorage, so it's available
+  from whichever device/session first confirms the account, not
+  only the one they registered on (localStorage doesn't follow
+  them across devices; this does). auth-guard.js's requireAuth()
+  picks it up and finishes creating the profile on the first
+  page load after a real session exists, however that session
+  came to be. If that metadata is ever missing for some reason,
+  the Settings page (My Profile) can still create the row from
+  scratch as a fallback.
   --------------------------------------------------------
 */
 
@@ -59,6 +64,13 @@ form.addEventListener("submit", async (e) => {
   const { error: signUpError } = await supabaseClient.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        in_game_name: inGameName,
+        real_name: realName,
+        discord_username: discordUsername || null,
+      },
+    },
   });
 
   submitBtn.disabled = false;
@@ -70,13 +82,10 @@ form.addEventListener("submit", async (e) => {
   }
 
   // No session yet (email confirmation required), so we can't call
-  // create_profile() here — stash the fields for auth-login.js to
-  // pick up on first successful login instead.
-  localStorage.setItem("pendingProfile", JSON.stringify({
-    in_game_name: inGameName,
-    real_name: realName,
-    discord_username: discordUsername || null,
-  }));
+  // create_profile() here — auth-guard.js's requireAuth() picks up
+  // the metadata above and finishes creating the profile on first
+  // page load after a real session exists, whichever device that
+  // ends up being.
 
   // Success — Supabase already sent a confirmation email.
   document.querySelector(".auth-card").innerHTML = `

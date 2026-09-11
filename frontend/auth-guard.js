@@ -95,7 +95,8 @@ async function requireAuth() {
     return null;
   }
 
-  await finishPendingProfile();
+  const hasProfile = await ensureProfile(session.user);
+  if (!hasProfile) return null; // already redirecting to /settings
 
   return session.user;
 }
@@ -103,35 +104,52 @@ async function requireAuth() {
 /*
   Registration can't call create_profile() directly — this site
   requires email confirmation, and signUp() doesn't hand back a
-  session until that's done, so auth.uid() has nothing to return
-  yet. auth-register.js stashes what was typed in localStorage
-  instead, meant to be picked up on first login.
+  session until that's done, so auth.uid() has nothing to return yet.
+  auth-register.js instead passes what was typed as signUp() metadata
+  (options.data), which Supabase stores on the auth.users row itself
+  — unlike the localStorage this used to rely on, that's available
+  from ANY device/session once the account is confirmed, not just the
+  one used to register. This runs on every protected page before
+  anything else (requireAuth() calls it unconditionally), which is
+  exactly the guarantee needed: however a session came to exist (a
+  normal login, or Supabase's confirmation link establishing one
+  directly on a completely different device), the very next page load
+  tries to finish creating the profile from that metadata.
 
-  This used to live in auth-login.js's submit handler, but that
-  only runs if the user actually fills in the login FORM. Supabase's
-  confirmation email link can establish a session and redirect
-  straight into the app without ever hitting that form — so the
-  handoff has to live somewhere that's guaranteed to run once a
-  session exists, no matter how they got one. requireAuth() runs
-  on every protected page before anything else, which is exactly
-  that guarantee.
+  If a profile still doesn't exist afterward — no metadata to work
+  from (an account that signed up before this fix existed, or
+  something wiped it), or create_profile() failed for some other
+  reason (a name collision, say) — this forces a redirect to Settings
+  instead of silently leaving them logged in with a half-broken
+  experience and no clue why. Settings' own "no profile yet" fallback
+  lets them fill it in from scratch. Skipped when already on Settings,
+  both to avoid a redirect loop and because that's exactly where this
+  would be sending them anyway.
 */
-async function finishPendingProfile() {
-  const pending = localStorage.getItem("pendingProfile");
-  if (!pending) return;
+async function ensureProfile(user) {
+  const { data: existing } = await supabaseClient
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
 
-  const fields = JSON.parse(pending);
-  const { error } = await supabaseClient.rpc("create_profile", {
-    p_in_game_name: fields.in_game_name,
-    p_real_name: fields.real_name,
-    p_discord_username: fields.discord_username,
-  });
+  if (existing) return true;
 
-  // Don't throw on failure — if this doesn't work, the Settings
-  // page's "no profile yet" fallback can still create it from
-  // scratch. Just leave the stashed data in place so we try again
-  // on the next page load instead of silently losing it.
-  if (!error) localStorage.removeItem("pendingProfile");
+  const meta = user.user_metadata || {};
+  if (meta.in_game_name && meta.real_name) {
+    const { error } = await supabaseClient.rpc("create_profile", {
+      p_in_game_name: meta.in_game_name,
+      p_real_name: meta.real_name,
+      p_discord_username: meta.discord_username || null,
+    });
+    if (!error) return true;
+  }
+
+  const onSettings = window.location.pathname === "/settings" || window.location.pathname === "/user/settings.html";
+  if (onSettings) return true; // let Settings' own "no profile yet" form handle it instead of redirecting to itself
+
+  window.location.href = "/settings";
+  return false;
 }
 
 /*
